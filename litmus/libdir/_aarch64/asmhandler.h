@@ -4,7 +4,7 @@
 /* Jade Alglave, University College London, UK.                             */
 /* Luc Maranget, INRIA Paris, France.                                       */
 /*                                                                          */
-/* Copyright 2020-present Institut National de Recherche en Informatique et */
+/* Copyright 2026-present Institut National de Recherche en Informatique et */
 /* en Automatique and the authors. All rights reserved.                     */
 /*                                                                          */
 /* This software is governed by the CeCILL-B license under French law and   */
@@ -14,6 +14,4 @@
 /* "http://www.cecill.info". We also give a copy in LICENSE.txt.            */
 /****************************************************************************/
 
-#include <stdint.h>
-
-typedef uint32_t ins_t; /* Type of instructions */
+void exceptions_init_test(void *p);

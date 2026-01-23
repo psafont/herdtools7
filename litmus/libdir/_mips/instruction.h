@@ -14,4 +14,7 @@
 /* "http://www.cecill.info". We also give a copy in LICENSE.txt.            */
 /****************************************************************************/
 
+#include <stdint.h>
+#include <stddef.h>
+
 typedef uint32_t ins_t; /* Type of instructions */

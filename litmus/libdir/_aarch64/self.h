@@ -2,9 +2,9 @@
 /*                           the diy toolsuite                              */
 /*                                                                          */
 /* Jade Alglave, University College London, UK.                             */
-/* Luc Maranget, INRIA Paris, France.                                       */
+/* Luc Maranget, INRIA Paris-Rocquencourt, France.                          */
 /*                                                                          */
-/* Copyright 2020-present Institut National de Recherche en Informatique et */
+/* Copyright 2026-present Institut National de Recherche en Informatique et */
 /* en Automatique and the authors. All rights reserved.                     */
 /*                                                                          */
 /* This software is governed by the CeCILL-B license under French law and   */
@@ -14,6 +14,18 @@
 /* "http://www.cecill.info". We also give a copy in LICENSE.txt.            */
 /****************************************************************************/
 
+/***********************************/
+/* Support for self-modifying code */
+/***********************************/
 #include <stdint.h>
 
-typedef uint32_t ins_t; /* Type of instructions */
+
+uint32_t getcachelinesize(void);
+
+uint32_t cache_line_size;
+
+void selfbar(void *p);
+
+inline static void isync(void);
+
+int check_dic_idc(int need_dic, int need_idc);

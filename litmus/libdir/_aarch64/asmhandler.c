@@ -13,7 +13,10 @@
 /* license as circulated by CEA, CNRS and INRIA at the following URL        */
 /* "http://www.cecill.info". We also give a copy in LICENSE.txt.            */
 /****************************************************************************/
-static void exceptions_init_test(void *p) {
+
+#include <asmhandler.h>
+
+void exceptions_init_test(void *p) {
   asm __volatile__ (
 "msr vbar_el1,%0\n\t"
 "isb\n"
