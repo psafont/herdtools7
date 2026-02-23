@@ -13,5 +13,8 @@
 /* license as circulated by CEA, CNRS and INRIA at the following URL        */
 /* "http://www.cecill.info". We also give a copy in LICENSE.txt.            */
 /****************************************************************************/
+#ifndef ASMHANDLER_H
+#define ASMHANDLER_H 1
 
 void exceptions_init_test(void *p);
+#endif

@@ -13,9 +13,12 @@
 /* license as circulated by CEA, CNRS and INRIA at the following URL        */
 /* "http://www.cecill.info". We also give a copy in LICENSE.txt.            */
 /****************************************************************************/
+#ifndef PRESI_SELF_H
+#define PRESI_SELF_H 1
 
 void litmus_icache_sync(uintptr_t vaddr, uintptr_t vaddr_end);
 
 size_t code_size(ins_t *p,int skip);
 
 void code_init(void *code, void *src, size_t sz);
+#endif
