@@ -569,6 +569,15 @@ module Make
         O.o "}" ;
         O.o ""
 
+      let dump_getinstrs test =
+        if Insert.exists "instruction.h" then begin
+          let fname = "instruction" in
+          ignore(Obj.do_cpy ~sub:arch_dir [] fname (Obj.libdir ^ fname) ".h") ;
+          O.o ("#include <" ^ fname  ^ ".h>") ;
+          O.o "" ;
+        end ;
+        UD.dump_getinstrs test
+
       let dump_read_timebase () =
         if (do_verbose_barrier || do_timebase) && have_timebase then begin
           O.o "/* Read timebase */" ;
@@ -2956,7 +2965,7 @@ module Make
         if U.label_in_outs env test then
           UD.dump_label_defs ~pp_labels:true ~pp_faults:false
             (T.all_labels test) ;
-        UD.dump_getinstrs test ;
+        dump_getinstrs test ;
         dump_read_timebase () ;
         dump_threads test ;
         dump_topology doc test ;

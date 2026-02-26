@@ -29,7 +29,7 @@ uint32_t cache_line_size;
 
 void selfbar(void *p);
 
-inline static void isync(void);
+void isync(void);
 
 int check_dic_idc(int need_dic, int need_idc);
 #endif
