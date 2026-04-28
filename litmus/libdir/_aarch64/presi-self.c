@@ -18,7 +18,8 @@
 /****************************************************************************/
 #include <self.h>
 #include <presi-self.h>
-#include <_find_ins.h>
+#include <find_ins.h>
+#include <string.h>
 
 static ins_t getret(void) {
   ins_t *x1;

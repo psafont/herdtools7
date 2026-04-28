@@ -1,8 +1,8 @@
 clean:
-	/bin/rm -f *.o *.s *.t *.elf *.flat *~ $(H)
+	/bin/rm -f *.o litmus/*.o *.s *.t *.elf *.flat *~ $(H)
 
 cleansource:
-	/bin/rm -f *.o *.c *.h *.s *~
+	/bin/rm -rf *.o *.c *.h *.s *~ litmus
 
 %.s: %.c
 	$(CC) $(GCCOPTS) -S $<

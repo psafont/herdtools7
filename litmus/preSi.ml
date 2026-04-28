@@ -399,7 +399,7 @@ module Make
           || do_precise
           || do_label_init in
         if dump_find_ins then begin
-          let fname = "_find_ins" in
+          let fname = "find_ins" in
           ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".c") ;
           ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h") ;
           O.o ("#include <" ^ fname ^ ".h>") ;
@@ -1464,7 +1464,7 @@ module Make
         let hashsz = 1+List.fold_left (fun k _ -> 2*k) hashsz faults in
         O.f "#define HASHSZ %i" hashsz ;
         O.o "" ;
-        let fname = "_hash" in
+        let fname = "hash" in
         ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h") ;
         O.o ("#include <" ^ fname ^ ".h>") ;
         O.o "" ;
@@ -1677,7 +1677,7 @@ module Make
           ()
         end ;
         O.o "" ;
-        let fname = "_instance" in
+        let fname = "instance" in
         ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h") ;
         O.o ("#include <" ^ fname ^ ".h>") ;
         O.o "" ;

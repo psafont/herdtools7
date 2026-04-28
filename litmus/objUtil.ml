@@ -159,7 +159,7 @@ module Make(O:Config)(Tar:Tar.S) =
       fnames
 
 (* Reference to the shared library *)
-    let libdir = "lib/"
+    let libdir = "litmus/"
 
 (* Copy lib file *)
     let cpy ?sub ?prf fnames name ext =
@@ -267,14 +267,14 @@ module Make(O:Config)(Tar:Tar.S) =
         | _ ->
             let affi = affinity_base () in
             let fnames = do_cpy fnames affi "affinity" ".c" in
-            let fnames = cpy fnames "affinity" ".h" in
+            let fnames = cpy' fnames "affinity" "affinity" ".h" in
             fnames in
       let fnames =
         if flags.Flags.memtag then
           begin
             let sub = dir_of_sysarch O.sysarch in
-            let fnames = cpy ~sub:sub fnames "memtag" ".c" in
-            let fnames = cpy ~sub:sub fnames "memtag" ".h" in
+            let fnames = do_cpy ~sub:sub fnames "memtag" "memtag" ".c" in
+            let fnames = do_cpy ~sub:sub fnames "memtag" "memtag" ".h" in
             fnames
           end
         else fnames in
