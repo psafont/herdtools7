@@ -60,7 +60,8 @@ module Make(O:Config)(Tar:Tar.S)(D:CoreDumper.S) =
           let utils =
             if pac then "auth.c"::k else k in
           String.concat " " (List.map Tar.outname utils) in
-        let com = sprintf "%s -o %s %s %s" gcc sX utils source in
+          let sLitmus = Tar.outname "litmus" in
+        let com = sprintf "%s -o %s %s %s -I %s" gcc sX utils source sLitmus in
         exec_stdout com
       end ;
       sX
@@ -96,8 +97,9 @@ module Make(O:Config)(Tar:Tar.S)(D:CoreDumper.S) =
       else begin
         let source = Tar.outname source in
         let sS = Tar.outname sS in
-        let com = sprintf "%s -S -o %s %s"
-            gcc2as sS source in
+        let sLitmus = Tar.outname "litmus" in
+        let com = sprintf "%s -S -o %s %s -I %s"
+            gcc2as sS source sLitmus in
         exec_stdout com ;
         showcode chan sS  ;
         output_line chan ""
