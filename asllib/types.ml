@@ -611,9 +611,10 @@ let rec lowest_common_ancestor ~loc env s t =
   (* The lowest common ancestor of types S and T is: *)
   (match (s.desc, t.desc) with
     | _, _ when type_equal env s t ->
-        (* • If S and T are the same type: S (or T). *)
+        (* If S and T are the same type: S (or T). *)
         Some s
-    | T_Named s_name, T_Named t_name when not (String.equal s_name t_name) ->
+    | T_Named _, T_Named _ ->
+        assert (not (same_named_type s t));
         let anon_s = make_anonymous env s and anon_t = make_anonymous env t in
         lowest_common_ancestor ~loc env anon_s anon_t
     | _, T_Named _ | T_Named _, _ ->
