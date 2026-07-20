@@ -16,6 +16,8 @@
 
 (** A tool that runs regression tests of herd7, against .expected files. *)
 
+open! Base.Fun.Syntax
+
 (* Flags. *)
 
 type path = string
@@ -36,53 +38,41 @@ type flags = {
 
 let litmuses_to_sort = 1000
 
-(** [for_each_litmus_in_dir dir f] applies [f] to each .litmus file in [dir].
- *  It reads [litmuses_to_sort] entries first and sorts them before applying [f],
- *  then applies [f] to entries in an undefined order after that.
- *  This is to balance readability of test output in `make test`,
- *  while allowing the tool to scale to arbitrarily large directories. *)
+(** [for_each_litmus_in_dir dir f] aplies [f] to each .litmus files in [dir].
+    It reads [litmuses_to_sort] entries and sorts them before applying [f] to
+    them, then applies [f] to the rest of the entries in an undefined order.
+    This enhances the readability of the test output in [make test], while
+    allowing the tool to scale to arbitrarily large directories. *)
 let for_each_litmus_in_dir dir f =
   let handle = Unix.opendir dir in
-  let readdir () =
-    try Some (Unix.readdir handle)
-    with End_of_file -> None
+  let n_litmus = ref 0 in
+  let first_litmuses = ref [] in
+  let apply entry = f (Filename.concat dir entry) in
+  let apply_first_litmuses () =
+    !first_litmuses 
+    |> List.sort String.compare
+    |> List.iter apply
   in
-  let rec next_litmus () =
-    match readdir () with
-    | Some name ->
-        if TestHerd.is_litmus name then
-          Some name
-        else
-          next_litmus ()
-    | None ->
-        None
+  let ensure_first_litmuses_applied f =
+    (* If there are less than [litmuses_to_sort], the collected litmuses need
+       yet to be applied when all the entries have been processed. *)
+    f () ; 
+    if !n_litmus > 0 && !first_litmuses != [] then apply_first_litmuses ()
   in
-  let rec first_n_litmuses n acc =
-    if n = 0 then
-      acc
-    else
-      match next_litmus () with
-      | Some litmus -> first_n_litmuses (n-1) (litmus :: acc)
-      | None -> acc
-  in
-  let rec for_each_remaining_litmus f =
-    match next_litmus () with
-    | Some litmus ->
-        f (Filename.concat dir litmus) ;
-        for_each_remaining_litmus f
-    | None ->
-        ()
-  in
-  Fun.protect
-    ~finally:(fun () -> Unix.closedir handle)
-    (fun () ->
-      first_n_litmuses litmuses_to_sort []
-        |> List.sort String.compare
-        |> List.map (Filename.concat dir)
-        |> List.iter f ;
-
-      for_each_remaining_litmus f
+  let collect litmus =
+    n_litmus := !n_litmus + 1 ;
+    first_litmuses := litmus :: !first_litmuses ;
+    if !n_litmus >= litmuses_to_sort then (
+      apply_first_litmuses () ;
+      first_litmuses := []      
     )
+  in
+  let@ () = Fun.protect ~finally:(fun () -> Unix.closedir handle) in
+  let@ () = ensure_first_litmuses_applied in
+  let@ entry = Filesystem.list_dir dir in
+  if TestHerd.is_litmus entry then (
+    if !n_litmus < litmuses_to_sort then collect entry else apply entry
+  )
 
 let read_litmus_dir litmus_dir =
   let litmuses = ref [] in
@@ -91,6 +81,14 @@ let read_litmus_dir litmus_dir =
       (fun litmus -> litmuses :=  litmus :: !litmuses) in
   List.rev !litmuses
 
+let all_ok it f =
+  let all_ok = ref true in
+  let is_ok litmus = 
+    let ok = f litmus in 
+    if not ok then all_ok := false
+  in
+  it is_ok ;
+  !all_ok
 
 (* Commands. *)
 
@@ -102,12 +100,11 @@ let show_tests_seq flags =
       ~libdir:flags.libdir
       flags.herd [l]
   in
-  for_each_litmus_in_dir flags.litmus_dir (fun l ->
-    command_of_litmus l |> print_string ;
-    print_char '\n'
-  )
+  let@ l = for_each_litmus_in_dir flags.litmus_dir in
+  command_of_litmus l |> print_string ;
+  print_char '\n'
 
-let show_tests_par j flags =
+let get_mapply flags =
   let herd = flags.herd
   and args =
     TestHerd.herd_args
@@ -116,38 +113,37 @@ let show_tests_par j flags =
       ~variants:flags.variants
       ~libdir:flags.libdir
       ~timeout:None ~checkfilter:None ~speedcheck:None in
+  let mapply = Filename.concat (Filename.dirname herd) "mapply7" in
+  mapply, args
+
+let parallelize ?j ~seq ~par = Option.fold ~none:seq ~some:par j
+
+let show_tests_par j flags =
+  let mapply, args = get_mapply flags in
   let herd_test =
     Filename.concat (Filename.dirname Sys.argv.(0)) "herd_test.exe" in
-  let mapply = Filename.concat (Filename.dirname herd) "mapply7" in
-  let args = "-exit"::"true"::TestHerd.apply_args  herd_test j (herd::args) in
+  let args = "-exit"::"true"::TestHerd.apply_args herd_test j (flags.herd::args) in
   let litmuses = read_litmus_dir flags.litmus_dir in
   let com = Command.command mapply  (args @ litmuses) in
   Printf.printf "%s\n%!" com
 
-  let show_tests ?j flags =
-    match j with
-    | None -> show_tests_seq flags
-    | Some j -> show_tests_par j flags
+let show_tests = parallelize ~seq:show_tests_seq ~par:show_tests_par
 
-  let run_tests_seq flags =
-    let test_passes l =
-      TestHerd.herd_output_matches_expected
-        ~verbose:flags.verbose
-        ~check:flags.check ~nohash:flags.nohash ~bell:None ~cat:None
-        ~conf:flags.conf
-        ~variants:flags.variants
-        ~libdir:flags.libdir
-        flags.herd l
-      (TestHerd.expected_of_litmus l)
-      (TestHerd.expected_failure_of_litmus l)
-      (TestHerd.expected_warn_of_litmus l)
+let run_tests_seq flags =
+  let test_passes l =
+    TestHerd.herd_output_matches_expected
+      ~verbose:flags.verbose
+      ~check:flags.check ~nohash:flags.nohash ~bell:None ~cat:None
+      ~conf:flags.conf
+      ~variants:flags.variants
+      ~libdir:flags.libdir
+      flags.herd l
+    (TestHerd.expected_of_litmus l)
+    (TestHerd.expected_failure_of_litmus l)
+    (TestHerd.expected_warn_of_litmus l)
   in
-  let everything_passed = ref true in
-  for_each_litmus_in_dir flags.litmus_dir (fun l ->
-      if not (test_passes l) then
-      everything_passed := false
-    ) ;
-  if not !everything_passed then begin
+  let everything_ok = all_ok (for_each_litmus_in_dir flags.litmus_dir) test_passes in
+  if not everything_ok then begin
     Printf.printf "Some tests had errors\n" ;
     exit 1
   end
@@ -155,16 +151,10 @@ let show_tests_par j flags =
 let do_run_test_par wrapper j flags =
   let wrapper = Filename.concat (Filename.dirname Sys.argv.(0)) wrapper in
   let _dbg = false in
-  let herd = flags.herd
-  and args =
-    TestHerd.herd_args ~bell:None ~cat:None ~conf:flags.conf
-      ~variants:flags.variants ~libdir:flags.libdir ~timeout:None
-      ~speedcheck:None ~checkfilter:None
-  in
-  let mapply = Filename.concat (Filename.dirname herd) "mapply7" in
+  let mapply, args = get_mapply flags in
   let args =
-    "-exit"::"true"::TestHerd.apply_args  wrapper j
-      (let args = herd::args in
+    "-exit"::"true"::TestHerd.apply_args wrapper j
+      (let args = flags.herd::args in
        let args =
          let open TestHerd in
          match flags.check with
@@ -190,11 +180,7 @@ let do_run_test_par wrapper j flags =
 
 let run_test_par = do_run_test_par "herd_test.exe"
 
-let run_tests ?j flags =
-  match j with
-  | None -> run_tests_seq flags
-  | Some j -> run_test_par j flags
-
+let run_tests = parallelize ~seq:run_tests_seq ~par:run_test_par
 
 let promote_tests_seq flags =
   let output_of_litmus l =
@@ -204,13 +190,11 @@ let promote_tests_seq flags =
       ~libdir:flags.libdir
       flags.herd [l]
   in
-  let everything_ok = ref true in
-  for_each_litmus_in_dir flags.litmus_dir
-    (fun litmus ->
-      let ok =
-        TestHerd.promote litmus (output_of_litmus litmus) in
-      if not ok then everything_ok := false) ;
-  if not !everything_ok then begin
+  let everything_ok =
+    all_ok (for_each_litmus_in_dir flags.litmus_dir)
+      (fun litmus -> TestHerd.promote litmus (output_of_litmus litmus))
+  in
+  if not everything_ok then begin
     Printf.printf "Some tests had errors\n" ;
     exit 1
   end
@@ -219,9 +203,7 @@ let promote_tests_par = do_run_test_par "herd_promote.exe"
 
 let promote_tests ?j flags =
   let flags = { flags with check = TestHerd.All; } in
-  match j with
-  | None -> promote_tests_seq flags
-  | Some j -> promote_tests_par j flags
+  parallelize ?j ~seq:promote_tests_seq ~par:promote_tests_par flags
 
 
 let usage = String.concat "\n" [
