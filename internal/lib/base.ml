@@ -22,6 +22,9 @@ module Fun = struct
     let out = open_out name in
     Stdlib.Fun.protect ~finally:(fun () -> close_out out) (fun () -> f out)
 
+  module Syntax = struct
+    let ( let@ ) f x = f x
+  end
 end
 
 module List = struct
@@ -29,6 +32,7 @@ module List = struct
 
   let to_ocaml_string f xs =
     Printf.sprintf "[%s]" (String.concat "; " (List.map f xs))
+
 end
 
 module Option = struct

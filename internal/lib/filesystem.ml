@@ -47,6 +47,16 @@ let rec remove_recursive path =
       Sys.remove path
   end
 
+let list_dir dir k =
+  let handle = Unix.opendir dir in
+  let close () = Unix.closedir handle in
+  let rec read () =
+    match Unix.readdir handle with
+    | entry -> k entry; read ()
+    | exception End_of_file -> ()
+  in
+  Fun.protect ~finally:close read
+
 (* Seed the PRNG when loading the module. *)
 let () = Random.self_init ()
 

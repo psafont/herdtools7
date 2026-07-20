@@ -23,6 +23,10 @@ module Fun : sig
       all circumstances. *)
   val open_out_protect : (out_channel -> 'a) -> string -> 'a
 
+  module Syntax : sig
+    val (let@) : ('a -> 'b) -> 'a -> 'b
+    (** [let@ result = f in ... in] is f (fun result -> ...) in *)
+  end
 end
 
 module List : sig
