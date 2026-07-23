@@ -225,7 +225,6 @@ module Make (S : SemExtra.S) = struct
 
   (* Generate prose description of a dependency (addr, data, ctrl). *)
   let describe_dep ctx (dep : dependency) : string =
-    let open Descriptum in
     let path = dep.path in
     let source_desc = describe_instruction ctx dep.source_ins in
     let target_desc = describe_instruction ctx dep.target_ins in

@@ -536,7 +536,6 @@ end = struct
     | Some _|None -> StringSet.empty
 
   let applies a d =
-    let open WPTE in
     match a,d with
     | NeonAccess SIMD.NeAcqPc,W
     | NeonAccess SIMD.NeRel,R -> false
@@ -652,7 +651,6 @@ end = struct
   let fold_atom_rw f r = f PP (f PL (f AP (f AL r)))
 
   let fold_pte_access f r =
-    let open WPTE in
     let fold_set set r =
       f (PteAccess (Set (`Plain,set)))
         (f (PteAccess (Set (`Release,set))) r) in
