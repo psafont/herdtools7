@@ -16,6 +16,6 @@
 
 (** Lexing PPC assembly *)
 
-module Make : functor(O:LexUtils.Config) -> sig
+module Make : functor(_:LexUtils.Config) -> sig
   val token : Lexing.lexbuf -> PPCParser.token
 end

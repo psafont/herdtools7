@@ -17,4 +17,4 @@
 
 (** Output litmus files, with index file, Tar *)
 
-module Make : functor (O:Tar.Option) -> OutTests.S
+module Make : functor (_:Tar.Option) -> OutTests.S

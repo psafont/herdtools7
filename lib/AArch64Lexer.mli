@@ -21,6 +21,6 @@ module type Config = sig
  val is_morello : bool
 end
 
-module Make : functor(O:Config) -> sig
+module Make : functor(_:Config) -> sig
   val token : Lexing.lexbuf -> AArch64Parser.token
 end

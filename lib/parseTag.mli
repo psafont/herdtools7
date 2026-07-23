@@ -39,7 +39,7 @@ module type OptS = sig
   (** Examine tag for immediate action, returns true if action performed *)
 
   val reducetag : t -> t list
-  (** Examine tag for immediate action, returns a tag list 
+  (** Examine tag for immediate action, returns a tag list
       which may or may not include the tag argument. *)
 end
 
@@ -70,5 +70,4 @@ module type RefsArg = sig
 end
 
 module MakeOptS :
-  functor (O:SArg) -> functor (Refs:RefsArg) -> OptS with type t = O.t
-
+  functor (O:SArg) -> functor (_:RefsArg) -> OptS with type t = O.t

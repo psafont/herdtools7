@@ -16,6 +16,6 @@
 
 (** Annotation  specification parser *)
 
-module Make : functor (O:LexUtils.Config) -> sig
+module Make : functor (_:LexUtils.Config) -> sig
   val parse : string list -> BellModel.event_decs
 end

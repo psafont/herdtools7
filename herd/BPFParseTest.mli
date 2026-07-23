@@ -11,6 +11,6 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-module Make : functor (Conf : RunTest.Config) (ModelConfig : MemWithCav12.Config) -> sig
+module Make : functor (_ : RunTest.Config) (_ : MemWithCav12.Config) -> sig
   val run : RunTest.runfun
 end

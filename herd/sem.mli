@@ -28,7 +28,7 @@ module type Semantics =
 (* Extra condition on RMW *)
     val atomic_pair_allowed : event -> event -> bool
 (* Instruction semantics, highly arch dependant *)
-    module Mixed(SZ:ByteSize.S) : sig
+    module Mixed(_:ByteSize.S) : sig
       val build_semantics :
         test -> A.inst_instance_id -> (A.program_order_index * branch) M.t
       val can_unset_af_loc : event -> A.V.v option

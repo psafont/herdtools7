@@ -51,4 +51,4 @@ module type S =
     val ov : string -> unit
   end
 
-module Make : functor (Chan : sig val hexa : bool val out : out_channel end) -> S
+module Make : functor (_ : sig val hexa : bool val out : out_channel end) -> S

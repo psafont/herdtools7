@@ -58,7 +58,7 @@ end
 
 (* Build a generic parser *)
 module Make
-    (C:Config)
+    (_:Config)
     (A:ArchBase.S)
-    (L:LexParse with type instruction = A.parsedPseudo) :
+    (_:LexParse with type instruction = A.parsedPseudo) :
     S with type pseudo = A.pseudo

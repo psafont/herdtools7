@@ -14,6 +14,6 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-module Make : functor(O:LexUtils.Config) -> sig
+module Make : functor(_:LexUtils.Config) -> sig
   val token : bool -> Lexing.lexbuf -> CParser.token
 end

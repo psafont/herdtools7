@@ -17,7 +17,7 @@
 (** Run a test from source file, dispatch on tests architecture *)
 
 module Top :
-  functor (C : sig
+  functor (_ : sig
     include RunTest.Config
     val collect_graph_data : bool
     (** Whether callers intend to consume execution graph data.

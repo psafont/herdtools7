@@ -22,7 +22,7 @@ module type Config = sig
 end
 
 
-module Make : functor (C:Config) ->
+module Make : functor (_:Config) ->
   sig
     type hidden_atom = Atomic | Reserve | Mixed of MachMixed.t
     include Atom.S with type atom = hidden_atom

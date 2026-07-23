@@ -107,7 +107,7 @@ module TestResult : sig
   end
 end
 
-module Make (O: Config)(M:XXXMem.S) : sig
+module Make (_: Config)(M:XXXMem.S) : sig
   type test_results = TestResult.Make(M.S).t
 
   val run : M.S.test -> M.S.test * test_results
@@ -128,7 +128,7 @@ module type PrinterConfig = sig
   val badflag : string option
 end
 
-module Printer (O : PrinterConfig) (S : SemExtra.S) : sig
+module Printer (_ : PrinterConfig) (S : SemExtra.S) : sig
   type stats := TestResult.Make(S).stats
   type execution := TestResult.Make(S).execution
 

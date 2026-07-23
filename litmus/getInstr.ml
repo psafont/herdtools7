@@ -26,7 +26,7 @@ module type S = sig
   val dump_instr :
     (('a,'b,'c,t) Constant.t -> string) -> ('a,'b,'c,t) Constant.t -> string
 
-  module Make : functor (O:Indent.S) -> sig val dump : t -> unit end
+  module Make : functor (_:Indent.S) -> sig val dump : t -> unit end
 end
 
 module No (I:sig type instr end) = struct

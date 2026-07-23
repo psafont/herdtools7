@@ -339,7 +339,7 @@ module type S =
       A.V.v -> E.action) -> A.inst_instance_id -> unit t
 
     module Mixed :
-    functor (SZ : ByteSize.S) -> sig
+    functor (_ : ByteSize.S) -> sig
 
       val read_mixed : Port.t ->MachSize.sz ->
         (MachSize.sz -> A.location -> A.V.v -> E.action) ->

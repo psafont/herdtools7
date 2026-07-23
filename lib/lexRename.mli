@@ -22,7 +22,7 @@ module type Config  = sig
   val verbose : int
 end
 
-module Make : functor(O:Config) ->
+module Make : functor(_:Config) ->
 sig
   val read_from :
       int -> (* start value *)

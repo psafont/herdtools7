@@ -57,11 +57,11 @@ type runfun =
 module Make :
 functor(S:Sem.Semantics) ->
   functor
-  (P:sig
+  (_:sig
     type pseudo
     val parse_string : string -> Splitter.result ->  pseudo MiscParser.t
   end with type pseudo = S.A.pseudo) ->
-    functor (M:XXXMem.S with module S = S) ->
-      functor (C:Config) -> sig
+    functor (_:XXXMem.S with module S = S) ->
+      functor (_:Config) -> sig
         val run : runfun
       end

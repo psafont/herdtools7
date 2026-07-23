@@ -32,7 +32,7 @@ module type Config = sig
   val stdout: bool
 end
 
-module Make(Config:Config) (T:Builder.S) : sig
+module Make(_:Config) (T:Builder.S) : sig
 
   type edge = T.edge
   type check = edge list list -> bool

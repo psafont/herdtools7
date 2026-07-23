@@ -40,7 +40,7 @@ module type S = sig
 
   val foralltrue : constr
 
-  module Mixed : functor (SZ: ByteSize.S) -> sig
+  module Mixed : functor (_: ByteSize.S) -> sig
 (* Check state *)
     val check_prop :
       A.CS.arch_solver_state -> prop -> A.type_env -> A.size_env

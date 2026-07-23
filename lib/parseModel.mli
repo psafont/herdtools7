@@ -21,7 +21,7 @@ module type Config = sig
   val libfind : string -> string
 end
 
-module Make : functor (O:Config)  -> sig
+module Make : functor (_:Config)  -> sig
   val find_parse : ?opt:bool -> string -> string * AST.t
   val parse : ?opt:bool -> string -> AST.t
 end

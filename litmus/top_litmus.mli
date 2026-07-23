@@ -99,6 +99,6 @@ module type TopConfig = sig
 end
 
 (* Compile/Run tests *)
-module Top(OT:TopConfig)(Tar:Tar.S) : sig
+module Top(_:TopConfig)(_:Tar.S) : sig
   val from_files : string list -> unit
 end

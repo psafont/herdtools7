@@ -32,8 +32,8 @@
 (******************************************************************************)
 
 module Make : functor
-  (Conf : RunTest.Config)
-  (ModelConfig : MemCat.Config)
+  (_ : RunTest.Config)
+  (_ : MemCat.Config)
   -> sig
   val run : RunTest.runfun
 end

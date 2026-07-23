@@ -16,6 +16,6 @@
 
 (** For lexing descriptions of the initial and final states *)
 
-module Make : functor (O:LexUtils.Config) -> sig
+module Make : functor (_:LexUtils.Config) -> sig
   val token : Lexing.lexbuf -> StateParser.token
 end

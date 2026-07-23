@@ -52,5 +52,5 @@ module type OneTest = sig
 end
 
 module Make :
-  functor (O:Config) -> functor(Tar : Tar.S) -> functor (CT : OneTest) ->
+  functor (_:Config) -> functor(_ : Tar.S) -> functor (_ : OneTest) ->
   sig val from_files : string list -> unit end

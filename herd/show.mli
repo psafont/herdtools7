@@ -15,11 +15,11 @@
 (****************************************************************************)
 
 (** Show dot files as Postscript, controlled by '-view viewer' option *)
-module Generator : functor (O:PrettyConf.S) -> sig
+module Generator : functor (_:PrettyConf.S) -> sig
   val generator : string
 end
 
-module Make : functor (O:PrettyConf.S)  -> sig
+module Make : functor (_:PrettyConf.S)  -> sig
 (* Fork a gv window to show that file *)
 val show_file : string -> unit
 

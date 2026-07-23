@@ -25,6 +25,6 @@ module type Out = sig
   val put : t -> string -> unit
 end
 
-module Make(O:Config)(Out:Out) : sig
+module Make(_:Config)(Out:Out) : sig
   val tr : Out.t -> Lexing.lexbuf -> bool
 end

@@ -32,7 +32,7 @@ module type Config = sig
 (* All sorts of information for keys *)
 (*************************************)
 
-module Make(Opt:Config) : sig
+module Make(_:Config) : sig
 
 (* None *)
   module None : sig

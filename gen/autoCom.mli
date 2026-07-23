@@ -27,4 +27,4 @@ module type S =  sig
   val dist_download : string -> string -> unit
 end
 
-module Make(C:Config) : S
+module Make(_:Config) : S

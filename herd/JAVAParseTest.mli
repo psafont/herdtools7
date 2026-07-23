@@ -15,7 +15,7 @@
 (****************************************************************************)
 
 module Make :
-  functor(Conf:RunTest.Config) ->
-    functor(ModelConfig:CMem.Config) -> sig
+  functor(_:RunTest.Config) ->
+    functor(_:CMem.Config) -> sig
       val run : RunTest.runfun
     end

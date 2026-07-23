@@ -43,4 +43,4 @@ module type S = sig
   val tar_dir : (*dir*) string -> unit
 end
 
-module Make(O:Option) : S
+module Make(_:Option) : S

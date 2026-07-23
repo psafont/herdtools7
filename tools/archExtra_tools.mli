@@ -16,10 +16,10 @@
 
 
 module Make :
-    functor (O : sig val hexa : bool end) ->
+    functor (_ : sig val hexa : bool end) ->
       functor (A:ArchBase.S) ->
-        functor (Pte:PteVal.S) ->
-          functor (AddrReg:AddrReg.S) ->
+        functor (_:PteVal.S) ->
+          functor (_:AddrReg.S) ->
             Arch_tools.S
 with type instruction = A.instruction
 and type reg = A.reg

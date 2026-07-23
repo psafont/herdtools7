@@ -17,7 +17,7 @@
 
 (* Some utilities *)
 
-module Hash : functor(O:Warn.Config) ->
+module Hash : functor(_:Warn.Config) ->
   sig
     open Answer
     val mk_hash_info : string -> MiscParser.info  -> hash

@@ -26,7 +26,7 @@ end
 val pp_debug : string -> unit
 
 module Make :
-  functor (C:Config) ->
+  functor (_:Config) ->
     sig
       val find : string -> string
       (** [find path] resolves [path] to a concrete the library file path.

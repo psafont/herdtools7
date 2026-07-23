@@ -14,7 +14,7 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-module Make: functor (O:Indent.S) -> functor (I:CompCondUtils.I) ->
+module Make: functor (_:Indent.S) -> functor (I:CompCondUtils.I) ->
   sig
     val fundef_prop :
       string ->

@@ -201,7 +201,7 @@ module Make
       val pp_cond : T.t -> string
 
 (* Dump stuff *)
-      module Dump : functor (O:Indent.S) -> functor(EPF:EmitPrintf.S) -> sig
+      module Dump : functor (_:Indent.S) -> functor(_:EmitPrintf.S) -> sig
         (* Some small dump functions common std/presi *)
 
         val dump_mbar_def : unit -> unit

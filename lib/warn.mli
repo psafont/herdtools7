@@ -18,7 +18,7 @@
 
 module type Config = sig val verbose : int end
 
-module Make : functor(O:Config) ->
+module Make : functor(_:Config) ->
   sig
 (* Formatting printer  for warning,
    use it as, for instance Printf.eprintf.

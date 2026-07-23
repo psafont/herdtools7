@@ -77,7 +77,7 @@ end
 (* Final formating *)
 (*******************)
 
-module Dump(Opt:Config) :
+module Dump(_:Config) :
   sig
     val dump :
         string (* legend *) ->

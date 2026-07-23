@@ -15,7 +15,7 @@
 (****************************************************************************)
 
 module Make :
-  functor(Conf:RunTest.Config) ->
-    functor(ModelConfig:BellMem.Config) -> sig
+  functor(_:RunTest.Config) ->
+    functor(_:BellMem.Config) -> sig
       val run : RunTest.runfun
     end

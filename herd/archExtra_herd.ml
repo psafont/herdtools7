@@ -237,7 +237,7 @@ module type S = sig
 (*****************************************)
 (* Size dependent items (for mixed-size) *)
 (*****************************************)
-  module Mixed : functor (SZ : ByteSize.S) -> sig
+  module Mixed : functor (_ : ByteSize.S) -> sig
     val endian : Endian.t
     val byte_sz : int
     val mask : string

@@ -28,7 +28,7 @@ end
 
 module Default : Config
 
-module Make : functor (O:Config) -> sig
+module Make : functor (_:Config) -> sig
 
 (* Build some special lexbuf:   'from_section (pos1,pos2) chan'
    Returns a lexbuf that behave as if the lexed stream starts at

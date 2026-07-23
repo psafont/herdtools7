@@ -41,6 +41,6 @@ module type Semantics =
    and type 'ins A.kpseudo = 'ins AArch64Base.kpseudo
 
 module type MakeSemantics =
-  functor(C:Config) ->
+  functor(_:Config) ->
   functor(V:Value.AArch64) ->
   Semantics with module A.V = V

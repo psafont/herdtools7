@@ -55,7 +55,7 @@ end
 
 module Default : Config
 
-module Make : functor (O:Config) -> sig
+module Make : functor (_:Config) -> sig
   val split : string -> in_channel -> result
   val split_string : string -> string -> result
 

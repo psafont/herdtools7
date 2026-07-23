@@ -24,7 +24,7 @@ module type Config = sig
 end
 
 module Make :
- functor (C:Config) -> sig
+ functor (_:Config) -> sig
 
    val check : string -> unit
    val rewrite : string -> unit

@@ -17,10 +17,10 @@
 (** Check code w.r.t. bell definitions *)
 
 module Make :
-functor (O:sig val debug : bool val compat :bool end) ->
+functor (_:sig val debug : bool val compat :bool end) ->
   functor (A:ArchBase.S) ->
       functor
-        (C:sig
+        (_:sig
           val info : BellModel.info option
           val get_id_and_list : A.instruction -> string * string list
           val set_list : A.instruction -> string list -> A.instruction

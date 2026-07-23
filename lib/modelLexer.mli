@@ -16,7 +16,7 @@
 
 (** Read models (the content of .cat files) *)
 
-module Make : functor(O:LexUtils.Config) -> sig
+module Make : functor(_:LexUtils.Config) -> sig
   val token_fun :
       (LexItem.k -> string -> unit) -> Lexing.lexbuf -> unit
   val token : Lexing.lexbuf -> ModelParser.token

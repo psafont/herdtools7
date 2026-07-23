@@ -18,7 +18,7 @@
 
 exception Cannot
 
-module Make : functor (O:Indent.S) -> functor (I:CompCondUtils.I) ->
+module Make : functor (_:Indent.S) -> functor (I:CompCondUtils.I) ->
   sig
     type switch
     val compile :  I.C.prop -> switch

@@ -27,7 +27,7 @@ val parse_int32 : bool ref ->  Arg.key * Arg.spec * Arg.doc
 val parse_faulttype : bool ref -> Arg.key * Arg.spec * Arg.doc
 module Make :
   functor
-   (I:sig
+   (_:sig
      val verbose : int
      val rename : string list
      val select : string list

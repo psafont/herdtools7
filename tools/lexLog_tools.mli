@@ -24,7 +24,7 @@ module type Config = sig
   val faulttype : bool
 end
 
-module Make(O:Config) : sig
+module Make(_:Config) : sig
   val read_chan : string -> in_channel ->  LogState.t
   val read_chan_simple : string -> in_channel ->  LogState.simple_t
   val read_name : string ->  LogState.t

@@ -16,7 +16,7 @@
 
 (** Lexing ARM assembly *)
 
-module Make : functor(O:LexUtils.Config) -> sig
+module Make : functor(_:LexUtils.Config) -> sig
   val token : Lexing.lexbuf -> ARMParser.token
   val check_name : string -> ARMParser.token
 end

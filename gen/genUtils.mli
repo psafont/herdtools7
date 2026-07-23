@@ -33,7 +33,7 @@ module type Extra = sig
 end
 
 module Make :
-functor (Cfg:Config) ->
+functor (_:Config) ->
   functor (A:Arch_gen.S) ->
     functor(Extra : Extra with
             type reg = A.reg

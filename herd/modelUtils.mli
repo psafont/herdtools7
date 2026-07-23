@@ -16,7 +16,7 @@
 
 (** Simple utilities used in many models *)
 
-module Make : functor (O:Model.Config) -> functor (S:SemExtra.S) -> sig
+module Make : functor (_:Model.Config) -> functor (S:SemExtra.S) -> sig
 
 (*******************************************)
 (* Complete re-computation of dependencies *)
