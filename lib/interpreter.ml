@@ -371,7 +371,7 @@ module Make
       | V.Empty,ClassRel r -> ClassRel.compare ClassRel.empty r
       | ClassRel r,V.Empty -> ClassRel.compare r ClassRel.empty
             (* Legitimate cmp *)
-      | Tag (_,s1), Tag (_,s2) -> String.compare s1 s2
+      | V.Tag (_,s1), V.Tag (_,s2) -> String.compare s1 s2
       | Event e1,Event e2 -> E.event_compare e1 e2
       | ValSet (_,s1),ValSet (_,s2) -> ValSet.compare s1 s2
       | Rel r1,Rel r2 -> E.EventRel.compare r1 r2
@@ -381,7 +381,7 @@ module Make
       | (Prim (_,i1,_),Prim (_,i2,_)) -> Misc.int_compare i1 i2
       | Clo _,Prim _ -> 1
       | Prim _,Clo _ -> -1
-      | Tuple vs,Tuple ws -> List.compare compare vs ws
+      | V.Tuple vs,V.Tuple ws -> List.compare compare vs ws
 (* Errors *)
       | (Unv,_)|(_,Unv) -> error "Universe in compare"
       | _,_ ->
@@ -421,7 +421,7 @@ module Make
     let rec pp_val = function
       | Unv -> "<universe>"
       | V.Empty -> "{}"
-      | Tag (_,s) -> sprintf "'%s" s
+      | V.Tag (_,s) -> sprintf "'%s" s
       | ValSet (_,s) ->
           sprintf "{%s}" (ValSet.pp_str "," pp_val s)
       | Clo {clo_name=(n,x);_} ->
@@ -693,13 +693,13 @@ module Make
     let do_as_rel error ks = function
       | Rel r -> r
       | TransRel tr -> E.EventRel.transitive_closure tr
-      | Empty -> E.EventRel.empty
+      | V.Empty -> E.EventRel.empty
       | Unv -> Lazy.force ks.unv
       | v -> error v
 
     and do_as_set error ks = function
       | Set s -> s
-      | Empty -> E.EventSet.empty
+      | V.Empty -> E.EventSet.empty
       | Unv -> ks.evts
       | v -> error v
 
@@ -714,7 +714,7 @@ module Make
     let as_notrans ks = function
       | Rel r -> r
       | TransRel tr -> tr
-      | Empty -> E.EventRel.empty
+      | V.Empty -> E.EventRel.empty
       | Unv -> Lazy.force ks.unv
       | v ->
           eprintf "this is not a relation: '%s'" (pp_val v) ;
@@ -722,7 +722,7 @@ module Make
 
     let do_as_classrel error = function
       | ClassRel r -> r
-      | Empty -> ClassRel.empty
+      | V.Empty -> ClassRel.empty
       | Unv -> Warn.fatal "No universal class relation"
       | v -> error v
 
@@ -1499,9 +1499,9 @@ module Make
                 set_op env loc (type_val v1) ValSet.add v1 s2
             | Pair p,Rel r ->
                 Rel (E.EventRel.add p r)
-            | Tuple [Event ev1;Event ev2;],Rel r ->
+            | V.Tuple [Event ev1;Event ev2;],Rel r ->
                 Rel (E.EventRel.add (ev1,ev2) r)
-            | Tuple [ Event ev1; Event ev2 ], TransRel r ->
+            | V.Tuple [ Event ev1; Event ev2 ], TransRel r ->
                 Rel (E.EventRel.(add (ev1, ev2) @@ transitive_closure r))
             | _,(Rel _ | TransRel _) ->
                 error env.EV.silent (get_loc e1)
@@ -1740,7 +1740,7 @@ module Make
           | Pair p ->
               let v2 = eval_rel env e2 in
               E.EventRel.mem p v2
-          | Tuple [Event ev1;Event ev2;] ->
+          | V.Tuple [Event ev1;Event ev2;] ->
               let v2 = eval_rel env e2 in
               E.EventRel.mem (ev1,ev2) v2
           | _ ->
