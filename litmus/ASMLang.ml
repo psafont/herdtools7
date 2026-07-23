@@ -526,7 +526,6 @@ module RegMap = A.RegMap)
 
       let compile_symbol_fun =
         let open Constant in
-        let open Mode in
         fun env sym ->
           match sym with
           | Virtual { name=Symbol.Data s; tag=None; cap=0L; offset=0; _ } ->

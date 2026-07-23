@@ -40,7 +40,6 @@ module Make(O:Config)(C:sig val eieio : bool end) : XXXCompile_gen.S =
 
 (* PPO *)
     open E
-    open R
 
     let as_opt = function Some x -> x | None -> assert false
 

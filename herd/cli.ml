@@ -91,7 +91,6 @@ end) = struct
     let module A = S.A in
     let module T = Test_herd.Make (S.A) in
     let module PP = Top_herd.Printer (O) (S) in
-    let open ConstrGen in
     let event_structures = result.TR.event_structures in
 
 (* Open *)

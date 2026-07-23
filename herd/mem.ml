@@ -379,7 +379,6 @@ module Make(C:Config) (S:Sem.Semantics) : S with module S = S	=
             Label.Map.fold (fun lbl addr acc -> IntMap.add addr lbl acc) m IntMap.empty in
           invert_map prog in
         let iaddrs = (* the list of all instruction addresses *)
-          let open Test_herd in
           if self && kvm then
             List.fold_left
             (fun acc (_,code,fh_code) ->

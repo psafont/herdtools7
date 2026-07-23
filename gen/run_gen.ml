@@ -16,8 +16,6 @@
 
 (* Basic model run (uniproc only) *)
 
-open Printf
-
 module type Config = sig
   val verbose : int
 end

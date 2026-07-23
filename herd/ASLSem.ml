@@ -415,7 +415,6 @@ module Make (Conf : Config) = struct
       | _ -> M.op Op.Rem v1 v2
 
     let binop =
-      let open AST in
       let v_true = V.Val (Constant.Concrete (ASLScalar.S_Bool true))
       and v_false = V.Val (Constant.Concrete (ASLScalar.S_Bool false)) in
       function
@@ -806,7 +805,6 @@ module Make (Conf : Config) = struct
       Asllib.ASTUtils.plug_primitives signatures Primitives.primitives
 
     let build_shared_pseudocode () =
-      let open AST in
       let open ASTUtils in
       let ( @! ) = List.rev_append in
       let patches =

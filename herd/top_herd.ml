@@ -136,7 +136,6 @@ module Printer (O : PrinterConfig) (S : SemExtra.S) = struct
 
   let observation : 'p ConstrGen.constr -> pos:int -> neg:int -> string =
     let open ConstrGen in
-    let open TestResult in
     match O.speedcheck with
     | Speed.False ->
         fun _test ~pos ~neg ->

@@ -24,7 +24,6 @@ end
 module Make (Config:Config) (M:Builder.S) =
   struct
     module D = DumpAll.Make (Config) (M)
-    open M.E
 
     let gen ess kont r =
       List.fold_left
@@ -32,7 +31,6 @@ module Make (Config:Config) (M:Builder.S) =
           kont es D.no_info D.no_name D.no_scope r)
         r ess
 
-    open Code
 
 (* ALL *)
     let varatom_ess =

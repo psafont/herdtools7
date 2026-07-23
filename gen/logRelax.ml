@@ -56,7 +56,6 @@ module Make(R:I) : S with type relax = R.relax
       | Parser.Error ->
           Warn.user_error "Bad relax syntax: %s" input in
     (* Sanity check: the input must be a singleton list *)
-    let open Ast in
     let parsed_list = match parsed_input with
     | Ast.One s -> [Ast.One s]
     | Ast.Seq l -> l

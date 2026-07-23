@@ -259,7 +259,6 @@ let run_tests names flags out_chan =
             Misc.check_opt
               (fun out -> fprintf out "%s\n" doc.Name.name)
               onames ;
-            let open Flags in
             { one_arch = check_arch one_arch arch;
               docs = doc::docs;
               srcs = src::srcs;

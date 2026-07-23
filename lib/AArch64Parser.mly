@@ -929,132 +929,100 @@ instr:
 | UADDV dreg COMMA preg COMMA zreg
   { I_UADDV (VSIMD64,$2,$4,$6)}
 | LD1B zregs1 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD1SP (VSIMD8,$2,$4,ra,ext) }
 | LD1H zregs1 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD1SP (VSIMD16,$2,$4,ra,ext) }
 | LD1W zregs1 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD1SP (VSIMD32,$2,$4,ra,ext) }
 | LD1D zregs1 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD1SP (VSIMD64,$2,$4,ra,ext) }
 | LD2B zregs2 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD2SP (VSIMD8,$2,$4,ra,ext) }
 | LD2H zregs2 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD2SP (VSIMD16,$2,$4,ra,ext) }
 | LD2W zregs2 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD2SP (VSIMD32,$2,$4,ra,ext) }
 | LD2D zregs2 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD2SP (VSIMD64,$2,$4,ra,ext) }
 | LD3B zregs3 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD3SP (VSIMD8,$2,$4,ra,ext) }
 | LD3H zregs3 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD3SP (VSIMD16,$2,$4,ra,ext) }
 | LD3W zregs3 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD3SP (VSIMD32,$2,$4,ra,ext) }
 | LD3D zregs3 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD3SP (VSIMD64,$2,$4,ra,ext) }
 | LD4B zregs4 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD4SP (VSIMD8,$2,$4,ra,ext) }
 | LD4H zregs4 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD4SP (VSIMD16,$2,$4,ra,ext) }
 | LD4W zregs4 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD4SP (VSIMD32,$2,$4,ra,ext) }
 | LD4D zregs4 COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_LD4SP (VSIMD64,$2,$4,ra,ext) }
 | ST1B zregs1 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST1SP (VSIMD8,$2,$4,ra,ext) }
 | ST1H zregs1 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST1SP (VSIMD16,$2,$4,ra,ext) }
 | ST1W zregs1 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST1SP (VSIMD32,$2,$4,ra,ext) }
 | ST1D zregs1 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST1SP (VSIMD64,$2,$4,ra,ext) }
 | ST2B zregs2 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST2SP (VSIMD8,$2,$4,ra,ext) }
 | ST2H zregs2 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST2SP (VSIMD16,$2,$4,ra,ext) }
 | ST2W zregs2 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST2SP (VSIMD32,$2,$4,ra,ext) }
 | ST2D zregs2 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST2SP (VSIMD64,$2,$4,ra,ext) }
 | ST3B zregs3 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST3SP (VSIMD8,$2,$4,ra,ext) }
 | ST3H zregs3 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST3SP (VSIMD16,$2,$4,ra,ext) }
 | ST3W zregs3 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST3SP (VSIMD32,$2,$4,ra,ext) }
 | ST3D zregs3 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST3SP (VSIMD64,$2,$4,ra,ext) }
 | ST4B zregs4 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST4SP (VSIMD8,$2,$4,ra,ext) }
 | ST4H zregs4 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST4SP (VSIMD16,$2,$4,ra,ext) }
 | ST4W zregs4 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST4SP (VSIMD32,$2,$4,ra,ext) }
 | ST4D zregs4 COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (ra,ext) = $6 in
+  { let (ra,ext) = $6 in
     I_ST4SP (VSIMD64,$2,$4,ra,ext) }
 | MOV zreg COMMA k
   { I_MOV_SV ($2, $4, S_NOEXT) }
@@ -1103,53 +1071,43 @@ instr:
 | SMSTOP smopt
   { I_SMSTOP $2 }
 | LD1B LCRL zab_slice RCRL COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_LD1SPT (VSIMD8,zareg,index,offset,$6,ra,ext) }
 | LD1H LCRL zah_slice RCRL COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_LD1SPT (VSIMD16,zareg,index,offset,$6,ra,ext) }
 | LD1W LCRL zas_slice RCRL COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_LD1SPT (VSIMD32,zareg,index,offset,$6,ra,ext) }
 | LD1D LCRL zad_slice RCRL COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_LD1SPT (VSIMD64,zareg,index,offset,$6,ra,ext) }
 | LD1Q LCRL zaq_slice RCRL COMMA pmreg_z COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_LD1SPT (VSIMD128,zareg,index,offset,$6,ra,ext) }
 | ST1B LCRL zab_slice RCRL COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_ST1SPT (VSIMD8,zareg,index,offset,$6,ra,ext) }
 | ST1H LCRL zah_slice RCRL COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_ST1SPT (VSIMD16,zareg,index,offset,$6,ra,ext) }
 | ST1W LCRL zas_slice RCRL COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_ST1SPT (VSIMD32,zareg,index,offset,$6,ra,ext) }
 | ST1D LCRL zad_slice RCRL COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_ST1SPT (VSIMD64,zareg,index,offset,$6,ra,ext) }
 | ST1Q LCRL zaq_slice RCRL COMMA preg COMMA mem_ea
-  { let open MemExt in
-    let (zareg,(index, offset)) = $3 in
+  { let (zareg,(index, offset)) = $3 in
     let (ra,ext) = $8 in
     I_ST1SPT (VSIMD128,zareg,index,offset,$6,ra,ext) }
 | MOVA zab_slice COMMA pmreg COMMA zbreg

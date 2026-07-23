@@ -126,7 +126,6 @@ module Make : functor (O:Config) -> functor (C:ArchRun.S) ->
           |Insert _|Store|Node _ -> false
           | Id -> assert false in
         let is_ord_event m =
-            let open C.E in
             match m.C.C.evt.C.C.bank with
             | Code.Ord -> true
             | _ -> false in
