@@ -61,10 +61,10 @@ let set_litmus_str contents =
 let log_js_error e =
   try
     Js.Unsafe.fun_call
-      (Js.Unsafe.variable "console.error")
+      (Js.Unsafe.pure_js_expr "console.error")
       [| Js.Unsafe.inject e |]
   with
-  | Js.Error _ -> ()
+  | Js_error.Exn _ -> ()
 
 let log_error s =
  log_js_error (Js.string s)
@@ -104,7 +104,7 @@ let autoloader ~prefix ~path =
           None
         end
       with
-      | Js.Error e ->
+      | Js_error.Exn e ->
           log_js_error e;
           None in
     if dbg then
