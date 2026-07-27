@@ -404,6 +404,8 @@ module Make
           ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h") ;
           O.o ("#include <" ^ fname ^ ".h>") ;
           O.o ""
+          (*ObjUtil.insert_lib_file O.o "_find_ins.c" ;
+          O.o ""*)
         end ;
         if do_self then begin
           let fname = "self" in
@@ -417,7 +419,13 @@ module Make
           O.o ("#include <" ^ fname ^ ".h>") ;
           O.o "" ;
         end ;
+        (* TODO: modularise _prelude_size.c once it becomes clear nop becomes a common opcode *)
         if CfgLoc.need_prelude then begin
+          (* let fname = "_prelude_size" in
+          let _ = Obj.do_cpy [] fname (Obj.libdir ^ fname) ".c" in
+          let _ = Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h" in
+          O.o ("#include <" ^ fname ^ ".h>") ;
+          O.o "" ; *)
           ObjUtil.insert_lib_file O.o "_prelude_size.c"
         end ;
         dump_find_ins
@@ -467,6 +475,8 @@ module Make
              ignore(Obj.do_cpy ~sub:arch_dir [] fname (Obj.libdir ^ fname) ".h") ;
              O.o ("#include <" ^ fname ^ ".h>") ;
              O.o "" ;
+             (*Insert.insert O.o "instruction.h" ;
+             O.o "" ;*)
              begin
                let open Fault.Handling in
                match Cfg.precision with
@@ -486,6 +496,8 @@ module Make
                  ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h") ;
                  O.o ("#include <" ^ fname ^ ".h>") ;
                  O.o ""
+                 (*ObjUtil.insert_lib_file O.o "_find_ins.c" ;
+                 O.o ""*)
                end in
 
              let faults = U.get_faults test in
@@ -557,6 +569,8 @@ module Make
              ignore(Obj.do_cpy ~sub:arch_dir [] fname (Obj.libdir ^ fname) ".h") ;
              O.o ("#include <" ^ fname ^ ".h>") ;
              O.o "" ;
+             (*Insert.insert O.o "kvm_fault_handler.c" ;
+             O.o "" ;*)
              if not (T.has_asmhandler test) then begin
                O.o "static void pp_faults(void) {" ;
                O.oi "count_t total=0;" ;
@@ -602,6 +616,8 @@ module Make
           ignore(Obj.do_cpy ~sub:arch_dir [] fname (Obj.libdir ^ fname) ".h") ;
           O.o ("#include <" ^ fname ^ ".h>") ;
           O.o "" ;
+          (*Insert.insert O.o "asmhandler.c" ;
+          O.o "" ;*)
           let no_ok,no_no =
             List.partition
               (ProcsUser.is procs_user)
@@ -646,6 +662,8 @@ module Make
             ignore(Obj.do_cpy ~sub:arch_dir [] fname (Obj.libdir ^ fname) ".h") ;
             O.o ("#include <" ^ fname ^ ".h>") ;
             O.o ""
+            (*Insert.insert O.o "kvm_user_stacks.c" ;
+            O.o ""*)
 
 (* Synchronisation barrier *)
       let lab_ext = if Cfg.numeric_labels then "" else "_lab"
@@ -1468,6 +1486,8 @@ module Make
         ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h") ;
         O.o ("#include <" ^ fname ^ ".h>") ;
         O.o "" ;
+        (*ObjUtil.insert_lib_file O.o "_hash.c" ;
+        O.o "" ;*)
         O.o "static void pp_entry(FILE *out,entry_t *p, int verbose, const char **group) {" ;
         let fmt = "%-6PCTR%c>" in
         EPF.fi fmt ["p->c";"p->ok ? '*' : ':'";] ;
@@ -1681,6 +1701,8 @@ module Make
         ignore(Obj.do_cpy [] fname (Obj.libdir ^ fname) ".h") ;
         O.o ("#include <" ^ fname ^ ".h>") ;
         O.o "" ;
+        (*ObjUtil.insert_lib_file O.o "_instance.c" ;
+        O.o "" ;*)
         ()
 
 (*****************)
