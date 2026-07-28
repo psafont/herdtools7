@@ -8,6 +8,7 @@
 /herd-www/www/catalogue
 /herd-www/www/weblib
 _build/
+config.mk
 catIncludes.ml
 herdtools7.install
 jerd.byte

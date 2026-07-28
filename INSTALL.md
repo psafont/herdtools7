@@ -35,6 +35,7 @@ Notice: Compilation with ocamlbuild is not longer possible
 Build
 -----
 
+    % ./configure
     % make all
 
 Testing
@@ -56,8 +57,5 @@ Install
 -------
 
 Tools will be installed in PREFIX/bin, and various files in PREFIX/share/herdtools7.
-By default (see Makefile) PREFIX is $HOME.
-You can change PREFIX by editing the Makefile, or by explicitly defining it
-when calling `make`, like so:
-
-    % make PREFIX="$HOME/.local/" install
+By default (see `configure.ml`) PREFIX is $HOME.
+You can change PREFIX by running ``./configure --prefix=your/prefix``.

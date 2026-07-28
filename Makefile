@@ -1,7 +1,8 @@
+include config.mk
+
 .DEFAULT_GOAL = all
 
 OS := $(shell uname)
-PREFIX=$$HOME
 D=dune
 
 #Limit parallelism of some expensive operations

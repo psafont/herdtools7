@@ -24,4 +24,8 @@
  (deps
   (alias herd-www/all)))
 
+(executable
+  (name configure)
+  (libraries dune-configurator))
+
 (documentation)
