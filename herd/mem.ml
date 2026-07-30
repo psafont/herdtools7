@@ -429,6 +429,33 @@ module Make(C:Config) (S:Sem.Semantics) : S with module S = S	=
         | Some (A.V.Val c) -> List.exists (Constant.virt_lbl_eq_mod_offset c) rel_pages
         | _ -> false in
 
+      (* *)
+      (* A section checking that code pages are well-formed *)
+      let page_addrs =
+        (* take addresses with labels, check they are at the beginning of a page *)
+        Label.Map.values prog
+        |> Seq.filter (fun addr ->
+          (addr mod Pseudo.page_size = 0)
+          && (is_on_exported_page (addr2va addr) || is_on_relevant_page (addr2va addr))
+          )
+      in
+      let page_size pa =
+        let (_,code) = IntMap.find pa code_segment in
+        Misc.List.count (fun (a, _) -> pa <= a && a < pa + Pseudo.page_size) code
+      in
+      let check =
+        match Seq.uncons page_addrs with
+        | None -> () (* no checks to perform *)
+        | Some (pa, page_addrs) -> begin
+          let eta = page_size pa in
+          Seq.iter (fun a ->
+            if (page_size a) != eta then
+              Warn.user_error "It is required that code pages subject to remapping hold an equal amount of instructions."
+            ) page_addrs
+          end
+      in check;
+      (* *)
+
       (* lbls2i -- overwritable instructions, with labels          *)
       (* overwritable_labels -- the set of labels of instructions  *)
       (*                        that are allowed to be overwritten *)
