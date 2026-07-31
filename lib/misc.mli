@@ -399,6 +399,9 @@ module List : sig
       Complexity is quadratic in the length of the list, but the order
       of elements is preserved. *)
 
+  val count : ('a -> bool) -> 'a list -> int
+  (** [count p l] returns the amount of elements in [l] that satisfy [p]. *)
+
   module Syntax : sig
     val (let*) : 'a list -> ('a -> 'b list) -> 'b list
   end

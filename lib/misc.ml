@@ -874,6 +874,8 @@ module List = struct
     in
     uniq eq [] l
 
+  let count p = List.fold_left (fun sum x -> sum + (if p x then 1 else 0)) 0
+
   module Syntax = struct
     let (let*) = fun l f -> concat_map f l
   end
