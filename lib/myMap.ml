@@ -51,6 +51,9 @@ module type S = sig
   val to_list : 'a t -> (key * 'a) list
   val of_list : (key * 'a) list -> 'a t
 
+  val values : 'a t -> 'a Seq.t
+  (** [values m] iterates on the values of the whole map, in ascending order of
+      keys *)
 end
 
 module Make(O:Set.OrderedType) : S with type key = O.t =
@@ -105,7 +108,8 @@ module Make(O:Set.OrderedType) : S with type key = O.t =
          | Some vs -> Some (v::vs))
         m
 
-    let to_list m = M.to_seq m |> List.of_seq
+    let to_list = M.bindings
     let of_list m = List.to_seq m |> M.of_seq
 
+    let values m = M.to_seq m |> Seq.map (fun (_, v) -> v)
   end
