@@ -65,6 +65,9 @@ uninstall:
 uninstall-aslref:
 	dune uninstall aslref --prefix=$(PREFIX)
 
+check:
+	dune build @check --profile $(DUNE_PROFILE)
+
 clean: dune-clean clean-asl-pseudocode clean-asldoc
 	rm -f Version.ml
 
