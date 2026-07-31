@@ -31,11 +31,7 @@ module type S = sig
 (* find with a default value *)
   val safe_find : 'a -> key -> 'a t -> 'a
 
-(* union from stdlib *)
-   val union_std : (key -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
-
 (* map union *)
-  val union : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
   val unions : ('a -> 'a -> 'a) -> 'a t list -> 'a t
 
 
@@ -87,13 +83,9 @@ module Make(O:Set.OrderedType) : S with type key = O.t =
 
     let safe_find d k m = try find k m with Not_found -> d
 
-    let union_std = union
-
-    let union u m1 m2 = union_std (fun _ v1 v2 -> Some (u v1 v2)) m1 m2
-
     let unions u ms = match ms with
     | [] -> empty
-    | m::ms -> List.fold_left (union u) m ms
+    | m::ms -> List.fold_left (union (fun _ v1 v2 -> Some (u v1 v2))) m ms
 
     let filter_by_key p m = filter (fun k _ ->  p k) m
 

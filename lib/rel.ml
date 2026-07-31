@@ -208,7 +208,7 @@ and module Es2 = MySet.Make(O2)
     let subset = subrel
 
     let union m1 m2 =
-      M.union_std
+      M.union
         (fun _ ys1 ys2 -> Some (Elts2.union ys1 ys2)) m1 m2
 
     let union3 m1 m2 m3 = union m1 @@ union m2 m3

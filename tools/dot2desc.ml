@@ -640,7 +640,7 @@ module DotGraph = struct
       | None -> Warn.fatal "Missing address register for PTE access\n" in
       Printf.sprintf "\\0(PTE(%s), %s)" loc reg
     ) in
-    let b_nodes = StringMap.union_std (fun key _ _ ->
+    let b_nodes = StringMap.union (fun key _ _ ->
       Warn.fatal "Found %s which is both a colour and pte branching effect\n" key
     ) bcolour_nodes b_pte_nodes in
 

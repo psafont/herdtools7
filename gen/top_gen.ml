@@ -729,7 +729,7 @@ let max_set = IntSet.max_elt
           i,c::cs,
           (C.union_map m ms,F.add_int_sets (f@fs) foks),
           io::ios,
-          A.LocMap.union_std
+          A.LocMap.union
             (fun loc t1 t2 ->
                if TypBase.equal t1 t2 then Some t1
                else

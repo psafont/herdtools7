@@ -791,7 +791,7 @@ module Make  (C:Config) (AI:Arch_herd.S) (Act:Action.S with module A = AI) :
 
     module EventMap = MyMap.Make(OrderedEvent)
 
-    let emap_union m1 m2 =  EventMap.union (fun v1 _v2 ->  v1) m1 m2
+    let emap_union m1 m2 =  EventMap.union (fun _ v1 _v2 ->  Some v1) m1 m2
     let emap_union3 m1 m2 m3 =  emap_union m1 @@ emap_union m2 m3
     let emap_union4 m1 m2 m3 m4 =
       emap_union
