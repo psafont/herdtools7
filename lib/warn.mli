@@ -18,29 +18,24 @@
 
 module type Config = sig val verbose : int end
 
-module Make : functor(O:Config) ->
-  sig
-(* Formatting printer  for warning,
-   use it as, for instance Printf.eprintf.
-   Warning is printed iff verbose mode is activated *)
-val warn : ('a, unit, string, unit) format4 -> 'a
-val warn1 : ('a, unit, string, unit) format4 -> 'a
-  end
+module Make : functor(O:Config) -> sig
+  val warn : ('a, unit, string, unit) format4 -> 'a
+  (** Formatting printer  for warning, use it as, for instance Printf.eprintf.
+      Warning is printed iff verbose mode is activated *)
 
-(* Always print the message *)
+  val warn1 : ('a, unit, string, unit) format4 -> 'a
+end
+
 val warn_always : ('a, out_channel, unit, unit) format4 -> 'a
+(** Always print the message *)
 
-(* Format a message and finish with current test, by raising
-   exception Exit *)
 val exit : ('a, unit, string, unit) format4 -> 'a
+(** Format a message and finish with current test, by raising exception Exit *)
 
-(* To be called when some error results from
-   wrong or unhandled input, such as for instance
-   a jump when jumps are not implemented, or
-   an illegal operation on symbolic constants.
-   raises Misc.UserError (formatted message) *)
 val user_error : ('a, unit, string, 'b) format4 -> 'a
+(** To be called when some error results from wrong or unhandled input, such as
+    for instance a jump when jumps are not implemented, or an illegal operation
+    on symbolic constants. raises Misc.UserError (formatted message) *)
 
-(* Idem, but the user should not be blamed,
-   exception Misc.Fatal *)
-    val fatal :  ('a, unit, string, 'b) format4 -> 'a
+val fatal :  ('a, unit, string, 'b) format4 -> 'a
+(** Idem, but the user should not be blamed, exception Misc.Fatal *)

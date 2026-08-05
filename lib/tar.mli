@@ -19,8 +19,8 @@
 (* Input *)
 module type Option = sig
   val verbose : int
-(* Output name, *.tar -> archive, *.tgz -> compressed archive, * -> directory *)
   val outname : string  option
+  (** Output name, *.tar -> archive, *.tgz -> compressed archive, * -> directory *)
 end
 
 module type S = sig

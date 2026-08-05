@@ -18,8 +18,8 @@ module type Config = sig
   include ArchExtra_litmus.Config
 end
 
-(* Abstract signature of architectures *)
 
+(** Abstract signature of architectures *)
 module type Base = sig
 
   val base_type : CType.t

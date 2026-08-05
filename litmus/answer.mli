@@ -20,15 +20,17 @@
 type hash = { filename : string ;  hash : string ; }
 type hash_env = hash StringMap.t
 
-type completed = (* Answer for completed test *)
-  { arch : Archs.t ; (* Arch of test *)
-    doc : Name.t   ; (* Name of test *)
-    src : string   ; (* Name of emitted source file *)
-    fullhash : hash ; nprocs : int ; (* hash and numbre of threads *)
+type completed =
+  { arch : Archs.t ; (** Arch of test *)
+    doc : Name.t   ; (** Name of test *)
+    src : string   ; (** Name of emitted source file *)
+    fullhash : hash ; (** Has of the test*)
+    nprocs : int ; (** Number of threads used to run the test *)
     flags: Flags.t ;
   }
+(** Answer for completed test *)
 
 type answer =
   | Completed of completed
-  | Interrupted of exn (* Error *)
-  | Absent (* Test not compile for some reason under user control *)
+  | Interrupted of exn (** Error  *)
+  | Absent (** Test could not compile for some reason under user control *)
