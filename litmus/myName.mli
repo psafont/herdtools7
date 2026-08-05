@@ -24,8 +24,10 @@ val chop_litmus : string -> string
 (* outname base ext returns output file name *)
 val outname : string -> string -> string
 
-(* Open litmus own files *)
 val open_lib : ?sub:string -> string -> string * in_channel
+(** [open_lib ?sub filename] detects whether [sub/filename] exists in [.],
+   [$LITMUSDIR] or [$LITMUSLIB] and opens that file that's found first, if at
+   all. *)
 
 (* Get litmus own file complete name *)
 val name_lib : string -> string
