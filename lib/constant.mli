@@ -195,6 +195,7 @@ val is_pt : ('scalar,'pte,'addrreg,'instr)  t -> bool
 val make_canonical : ('scalar,'pte,'addrreg,'instr) t -> ('scalar,'pte,'addrreg,'instr) t
 
 val mk_sym_morello : string -> string -> string -> ('scalar,'pte,'addrreg,'instr) t
+
 module type S =  sig
 
   module Scalar : Scalar.S

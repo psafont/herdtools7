@@ -76,7 +76,7 @@ module type Base = sig
   val default_sync_handler : bool -> string
   val vector_table : bool -> string -> string list
 
-(* Reaction to different types, fail or warn *)
+  (* Reaction to different types, fail or warn *)
   val error : (CType.t -> CType.t -> bool)
   val warn : (CType.t -> CType.t -> bool)
 
@@ -85,28 +85,6 @@ module type Base = sig
   module GetInstr : GetInstr.S with type t = instruction
 
 end
-
-module type K = sig
-  include ArchBase.S
-  module V : Constant.S
-
-  module RegSet : MySet.S with type elt = reg
-
-  include Location.S
-  with type loc_reg = reg and
-  type loc_global = string
-
-  type state = (location * V.v) list
-  type fullstate = (location * (TestType.t * V.v)) list
-
-  module Out : Target.S
-  with type arch_reg = reg (* Out abstracted *)
-
-  val find_in_state : location -> state -> V.v
-  val pp_reg : reg -> string
-end
-
-
 
 module type S =
   sig
