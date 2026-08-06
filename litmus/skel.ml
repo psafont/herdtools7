@@ -24,46 +24,30 @@ and indent4 = Indent.indent4
 and indent5 = Indent.indent5
 
 module type Config = sig
-  val verbose : int
+  include Common.Config
+
   val verbose_prelude : bool
   val verbose_barrier : bool
-  val hexa : bool
   val speedcheck : Speedcheck.t
-  val driver : Driver.t
   val safer : Safer.t
   val cautious : bool
-  val preload : Preload.t
-  val word : Word.t
   val barrier : Barrier.t
   val collect : Collect.t
   val syncmacro : int option
   val isync : bool
   val memory : Memory.t
   val contiguous : bool
-  val alloc : Alloc.t
   val doublealloc : bool
   val noalign : Align.t option
   val threadstyle : ThreadStyle.t
   val launch : Launch.t
-  val affinity : Affinity.t
-  val logicalprocs : int list option
-  val smt : int
-  val nsockets : int
   val smtmode : Smt.t
-  val force_affinity : bool
-  val kind : bool
   val numeric_labels : bool
-  val delay : int
   val syncconst : int
   val morearch : MoreArch.t
   val xy : bool
-  val c11 : bool
   val ascall : bool
-  val variant : Variant_litmus.t -> bool
-  val stdio : bool
   val limit : bool
-  val exit_cond : bool
-  include DumpParams.Config
 end
 
 let sentinel   = "-239487" (* Susmit's sentinel *)
@@ -77,7 +61,7 @@ let sentinel_of t =
   | _ -> sentinel
 
 module Make
-    (Cfg:sig include Config val sysarch : Archs.System.t end)
+    (Cfg:Config)
     (P:sig type code end)
     (A:Arch_litmus.Base)
     (T:Test_litmus.S with

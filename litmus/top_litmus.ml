@@ -109,7 +109,6 @@ module type Config = sig
   include GenParser.Config
   include Compile.Config
   val asmcommentaslabel : bool
-  val sysarch : Archs.System.t
   (* Additions for Presi *)
   val line : int
   val noccs : int

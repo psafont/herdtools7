@@ -18,41 +18,21 @@
 open Printf
 
 module type Config = sig
-  val verbose : int
-  val hexa : bool
-  val preload : Preload.t
-  val driver : Driver.t
-  val alloc : Alloc.t
-  val word : Word.t
+  include Common.Config
+
+  (* exclusive to preSi *)
   val line : int
   val noccs : int
-  val affinity : Affinity.t
-  val logicalprocs : int list option
-  val smt : int
-  val nsockets : int
-  val smtmode : Smt.t
-  val force_affinity : bool
-  val kind : bool
-  val numeric_labels : bool
-  val delay : int
-  val c11 : bool
   val timelimit : float option
   val check_nstates : string -> int option
-  val stdio : bool
-  val exit_cond : bool
-  include DumpParams.Config
-  val precision : Fault.Handling.t
-  val tagcheck : Precision.t
-  val variant : Variant_litmus.t -> bool
+
+  val is_kvm : bool
+  val is_tb : bool
+  val ascall : bool
 end
 
 module Make
-    (Cfg:sig include Config
-      val sysarch : Archs.System.t
-      val is_kvm : bool
-      val is_tb : bool
-      val ascall : bool
-    end)
+    (Cfg: Config)
     (P:sig type ins type code end)
     (A:Arch_litmus.Base with type instruction = P.ins)
     (T:Test_litmus.S with
