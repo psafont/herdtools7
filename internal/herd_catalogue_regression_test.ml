@@ -75,27 +75,41 @@ type herd_kinds =
 
 let herd_kinds_of_permutation ?j ?timeout flags shelf_dir litmuses p =
   let prepend path = Filename.concat shelf_dir path in
-  let cmd =
-    TestHerd.run_herd
-      ~verbose:flags.verbose
+  let args = TestHerd.herd_args 
       ~bell:(Option.map prepend p.bell)
       ~cat:(Some (prepend p.cat))
       ~conf:(flags.conf_path >>= Option.map prepend p.cfg)
       ~variants:flags.variants
       ~libdir:flags.libdir
-      ~speedcheck:(if flags.fast then `Fast else `False)
-      flags.herd ?j ?timeout
+      ~speedcheck:(if flags.fast then Some `Fast else Some `False)
+      ~timeout
+      ~checkfilter:None
+  in
+  let cmd = TestHerd.run_herd ~verbose:flags.verbose ?j ~herd:flags.herd ~args
   in
   match cmd litmuses with
-  | Ok (0, stdout, []) ->
-      let kind_of_log l = Log.(l.name, Option.get l.kind) in
-      Kinds (List.map kind_of_log (Log.of_string_list stdout))
-  | Ok (ec, _, _) when ec = 128 + 26 -> (* SIGVTALRM *)
-      Timeout litmuses
-  | Ok (_, _, stderr) ->
-      let lines = String.concat "\n" stderr in
-      let msg = Printf.sprintf "Herd returned stderr:\n%s" lines in
-      raise (Error msg)
+  | Ok results ->
+      let kinds, timed_out =
+        List.fold_left
+          (fun (kinds, timed_out) -> function
+            | TestHerd.{status=0; stdout; stderr=[]; _} ->
+                let kind_of_log l = Log.(l.name, Option.get l.kind) in
+                let result_kinds =
+                  List.map kind_of_log (Log.of_string_list stdout) in
+                List.rev_append result_kinds kinds, timed_out
+            | TestHerd.{status; litmus; _ } when status = 128 + 26 -> (* SIGVTALRM *)
+                kinds, litmus :: timed_out
+            | TestHerd.{stderr; litmus; _} ->
+                let lines = String.concat "\n" stderr in
+                let msg =
+                  Printf.sprintf "Herd returned stderr for %s:\n%s"
+                    litmus lines in
+                raise (Error msg))
+          ([], []) results in
+      begin match timed_out with
+      | [] -> Kinds (List.rev kinds)
+      | _::_ -> Timeout (List.rev timed_out)
+      end
   | Result.Error e ->
       let msg = Printf.sprintf "Herd returned error: %s" (Command.string_of_error e) in
       raise (Error msg)

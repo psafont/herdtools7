@@ -59,4 +59,7 @@ module Iter : sig
   type 'a t = unit -> 'a option
 
   val of_list : 'a list -> 'a t
+
+  val of_singleton : 'a -> 'a t
+  (** [of_singleton x] returns an iterator that returns a single value, [x]. *)
 end

@@ -32,8 +32,8 @@ let args = to_list 2
 
 let () =
   let ok =
-    TestHerd.run_herd_args com args litmus
-    |> Result.map (TestHerd.promote litmus)
+    TestHerd.run_herd_one ~herd:com ~args litmus
+    |> Result.map TestHerd.promote
   in
   let err_code = match ok with
     | Ok true -> 0

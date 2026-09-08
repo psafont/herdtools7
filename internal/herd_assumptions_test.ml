@@ -115,11 +115,17 @@ let run flags =
         let remaining_flags =
           List.fold_left
             (fun remaining_flags litmus ->
-              let _, stdout, stderr =
-                TestHerd.run_herd ~bell:None ~cat:(Some flags.assumptions_file)
-                  ~conf ~variants:[] ~libdir:flags.libdir flags.herd [ litmus ]
+              let args = TestHerd.herd_args ~bell:None
+                  ~cat:(Some flags.assumptions_file) ~conf ~variants:[]
+                  ~libdir:flags.libdir ~timeout:None ~speedcheck:None
+                  ~checkfilter:None
+               in 
+              let result =
+                TestHerd.run_herd_one ~herd:flags.herd ~args litmus
                 |> Result.fold ~ok:Fun.id ~error:raise_e
               in
+              let stdout = result.TestHerd.stdout
+              and stderr = result.TestHerd.stderr in
               let stdout = String.concat "\n" stdout in
               let stderr = String.concat "\n" stderr in
               if debug && not (stderr = "") then
