@@ -33,6 +33,7 @@ let args = to_list (comidx+1)
 
 let out_name = TestHerd.outname litmus
 and err_name = TestHerd.errname litmus
+and status_name = TestHerd.statusname litmus
 
 let cat p out_chan line =
   if verbose && TestHerd.check_tags line then prerr_endline line ;
@@ -43,18 +44,24 @@ let run out err =
   let stdout = cat TestHerd.is_stable out
   and stderr = cat (fun _ -> true) err
   and stdin = Base.Iter.of_list [litmus] in
-  ignore
-    (Command.NonBlock.run_status ~stdin ~stdout ~stderr com args)
+  match Command.NonBlock.run_status ~stdin ~stdout ~stderr com args with
+  | Ok status -> status
+  | Error error ->
+      Printf.fprintf err "%s\n" (Command.string_of_error error) ;
+      1
 
 let rm_if_empty name =
   let st = Unix.stat name in
   if st.Unix.st_size = 0 then Sys.remove name
 
 let () =
-  Base.Fun.open_out_protect
-    (fun out ->
-      Base.Fun.open_out_protect (run out) err_name)
-    out_name ;
+  let status =
+    Base.Fun.open_out_protect
+      (fun out ->
+        Base.Fun.open_out_protect (run out) err_name)
+      out_name in
+  Filesystem.write_file status_name
+    (fun out -> Printf.fprintf out "%i\n" status) ;
   rm_if_empty out_name ;
   rm_if_empty err_name ;
   ()

@@ -57,4 +57,11 @@ module Iter = struct
       match !r with
       | [] -> None
       | x::xs -> r := xs ; Some x
+
+  let of_singleton s =
+    let r = ref (Some s) in
+    fun () ->
+      match !r with
+      | None -> None
+      | s -> r := None; s
 end

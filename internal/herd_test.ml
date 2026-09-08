@@ -67,5 +67,5 @@ let () =
   | Ok () -> exit 0
   | Error e ->
       Printf.printf "Test not ok: %s %s; error %s\n%!"
-          (String.concat " " (com::args)) litmus (TestHerd.pp_run_error e) ;
+          (String.concat " " (com::args)) litmus (TestHerd.pp_expectation_error e) ;
       exit 1

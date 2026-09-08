@@ -21,12 +21,21 @@ type path = string
 type stdout_lines = string list
 type stderr_lines = string list
 
+type run_result = {
+  litmus : path ;
+  status : int ;
+  stdout : stdout_lines ;
+  stderr : stderr_lines ;
+}
+
 (** Type for speedcheck argument *)
 type speedcheck = [`True | `False | `Fast]
 
-(** Systematic file names for standard output and standard error , from test file name *)
+(** Systematic file names for standard output, standard error, and exit status,
+    from a test file name. *)
 val outname : string -> string
 val errname : string -> string
+val statusname : string -> string
 
 (** [read_file name] returns the contents of file [name] as a list
  * of lines. Returns the empty list when file is absent *)
@@ -37,19 +46,19 @@ val is_stable : string -> bool
 
 (** Format herd command-line options as a list *)
 val herd_args :
-  bell     : path option ->
-  cat      : path option ->
-  conf     : path option ->
-  variants : string list ->
-  libdir   : path ->
-  timeout  : float option ->
-  speedcheck : speedcheck option ->
+  bell        : path option ->
+  cat         : path option ->
+  conf        : path option ->
+  variants    : string list ->
+  libdir      : path ->
+  timeout     : float option ->
+  speedcheck  : speedcheck option ->
   checkfilter : bool option ->
   string list
 
 (** [apply_args herd j args] Format mapply command-line options as a list,
- *  where [herd] is path to herd command, [j] is concurrency leval and
- *  [args] is the list of [herd] command-line options. *)
+    where [herd] is path to herd command, [j] is concurrency leval and [args]
+    is the list of [herd] command-line options. *)
 val apply_args : string -> int -> string list -> string list
 
 (** Same as above, with additional redirection of output channels
@@ -71,43 +80,18 @@ val herd_command :
 (** [check_tags line] Checks that a line is a verbose diagnostic. *)
 val check_tags : string -> bool
 
-(** [run_herd ~bell ~cat ~conf ~variants ~libdir herd ?j litmuses] runs the
- *  binary [herd] with a custom [libdir] on list of litmus files [litmuses],
- *  and returns the stdout with unstable lines removed (e.g. Time) and stderr.
- *  Paths to [cat], [bell], and [conf] files, as well as [variants], can also
- *  be passed in.
- * If argument [j] is present, at most [j] tests are run concurrently *)
-val run_herd :
-  ?verbose:bool ->
-  bell     : path option ->
-  cat      : path option ->
-  conf     : path option ->
-  variants : string list ->
-  libdir   : path ->
-  path ->
-  ?j:int -> ?timeout:float -> ?speedcheck:speedcheck -> ?checkfilter:bool ->
-  path list -> (int * string list * string list, Command.error) result
+(** [run_herd ?verbose ?j ~herd args litmuses] runs the executable [herd] with a
+    custom the arguments [args] on list of litmus files [litmuses], and returns
+    the stdout with unstable lines removed (e.g. Time) and stderr. If argument
+    [j] is present, at most [j] tests are run concurrently. One result is
+    returned for each input litmus test. *)
+val run_herd : ?verbose : bool -> ?j : int -> herd : path -> args : string list
+  -> path list -> (run_result list, Command.error) result
 
-(** [run_herd_args herd args litmus] similar in functionality  to
-  * [run_herd] above but different as regards interface:
-  *   1. Command-line options are given as a list of strings;
-  *   2. One litmus test only is given as argument.
-  *)
-val run_herd_args :
-  ?verbose:bool -> path -> string list -> path ->
-    (int * string list * string list, Command.error) result
-
-(** [run_herd_concurrent ~bell ~cat ~conf ~variants ~libdir herd j litmuses]
- *  Similar to [run_herd] except that output is stored into files specific
- *  to each test: [litmus].out and [litmus].err. *)
-val run_herd_concurrent :
-  ?verbose:bool ->
-  bell     : path option ->
-  cat      : path option ->
-  conf     : path option ->
-  variants : string list ->
-  libdir   : path ->
-     path -> j:int-> path list -> (int, Command.error) result
+(** [run_herd_one ?verbose herd args litmus] is similar in functionality to
+    [run_herd] above but only one litmus test is given as argument. *)
+val run_herd_one : ?verbose:bool -> herd : path -> args : string list -> path
+  -> (run_result, Command.error) result
 
 (** Type of comparison for stdout logs *)
 type check =
@@ -117,14 +101,14 @@ type check =
 
 val pp_check : check -> string
 
-(** [herd_output_matches_expected ?check ?nohash litmus expected] returns true
+(** [output_matches_expected ?check ?nohash litmus expected] returns true
     when the output file produced by running [litmus] matches reference
     [expected]. If argument [nohash] is true, hashes are not compared. If
     argument [check] specifies the valididy check (see type check above). *)
 val output_matches_expected :
   ?check:check -> ?nohash:bool -> path -> path -> bool
 
-type run_error =
+type expectation_error =
   | Expected_missing (** The expected file for the litmus test is missing *)
   | Expected_fail_missing
       (** The expected failure file for the litmus test is missing *)
@@ -140,25 +124,28 @@ type run_error =
   | Command_error of Command.error
       (** THere's was an error when running herd, see [Command.error] for more information *)
 
-val pp_run_error : run_error -> string
+val pp_expectation_error : expectation_error -> string
 
 (** [herd_output_matches_expected ~bell ~cat ~conf ~variants ~libdir herd
     litmus expected expected_failure expected_warn] runs the binary [herd] with
     a custom [libdir] on a [litmus] file, compares the output in stdout and
     stderr, and compares it with an [expected] and [expected_failure] files,
     respectively. It returns [Ok ()] if the command is successful and outputs
-    match, otherwise returns a {run_error} Error. Paths to [cat], [bell], and
-    [conf] files, as well as [variants], can also be passed in. *)
+    match, otherwise returns a {expectation_error} Error. Paths to [cat],
+    [bell], and [conf] files, as well as [variants], can also be passed in. *)
 val herd_output_matches_expected :
-  ?verbose : bool ->
-  ?check   : check ->
-  ?nohash  : bool ->
-  bell     : path option ->
-  cat      : path option ->
-  conf     : path option ->
-  variants : string list ->
-  libdir   : path ->
-  path -> path -> path -> path option -> path option -> (unit, run_error) result
+  ?verbose    : bool ->
+  ?check      : check ->
+  ?nohash     : bool ->
+  bell        : path option ->
+  cat         : path option ->
+  conf        : path option ->
+  variants    : string list ->
+  libdir      : path ->
+  timeout     : float option ->
+  speedcheck  : speedcheck option ->
+  checkfilter : bool option ->
+  path -> path -> path -> path option -> path option -> (unit, expectation_error) result
 
 (** [herd_args_output_mathes_expected herd args litmus expected
     expected_failure expected_warn] has the same functionality as
@@ -166,7 +153,7 @@ val herd_output_matches_expected :
     line options are given as the list [args]. *)
 val herd_args_output_matches_expected :
   ?verbose:bool -> ?check:check -> ?nohash:bool -> path ->
-  string list -> path -> path -> path option -> path option -> (unit, run_error) result
+  string list -> path -> path -> path option -> path option -> (unit, expectation_error) result
 
 (** [is_litmus filename] returns whether the [filename] is a .litmus file. *)
 val is_litmus : path -> bool
@@ -189,7 +176,6 @@ val litmus_of_expected_failure : path -> path
 (** [expected_warn_of_litmus filename] returns the .litmus.expected-warn name for a given .litmus [filename]. *)
 val expected_warn_of_litmus : path -> path
 
-(** [promote  litmus result] it is assumed that result is the result of running the test [litmus].
-  * Promote [result] as the reference for test [litmus]. If anyrging is wrong, return [false].
-  *)
-val promote : path -> (int * string list * string list) -> bool
+(** [promote  result]  promote [result] as the reference for the litmus test it
+    contains. If anything is wrong, return [false]. *)
+val promote : run_result -> bool

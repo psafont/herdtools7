@@ -117,7 +117,7 @@ let run_tests ?j flags =
 
   let is_result_expected = function
     | Ok () -> true
-    | Error (_ : TestHerd.run_error) -> false
+    | Error (_ : TestHerd.expectation_error) -> false
   in
   let results =
     let les = List.combine litmus_paths expected_paths in
@@ -136,18 +136,23 @@ let run_tests ?j flags =
              ~conf:flags.herd_conf
              ~variants:flags.variants
              ~libdir:flags.libdir
+             ~timeout:None
+             ~speedcheck:None
+             ~checkfilter:None
              flags.herd l e None warn_file
            |> is_result_expected
          )
          les
     | Some j ->
-       ignore
-         (TestHerd.run_herd_concurrent
-            ~verbose:flags.verbose ~bell:None ~cat:None
-            ~conf:flags.herd_conf
-            ~variants:flags.variants
-            ~libdir:flags.libdir
-            flags.herd ~j:j litmus_paths) ;
+       let args =
+         TestHerd.herd_args ~bell:None ~cat:None ~conf:flags.herd_conf
+           ~variants:flags.variants ~libdir:flags.libdir ~timeout:None
+           ~speedcheck:None ~checkfilter:None
+       in
+       let _ : _ result = 
+         TestHerd.run_herd ~verbose:flags.verbose ~j ~herd:flags.herd ~args
+           litmus_paths
+       in
        List.map
          (fun (l,e) -> TestHerd.output_matches_expected ~nohash:flags.nohash l e)
          les
@@ -179,25 +184,27 @@ let promote_tests ?j flags =
 
   let litmus_paths = concat_dir tmp_dir litmuses in
 
+  let args =
+    TestHerd.herd_args ~bell:None ~cat:None ~conf:flags.herd_conf
+      ~variants:flags.variants ~libdir:flags.libdir ~timeout:None
+      ~speedcheck:None ~checkfilter:None
+  in
   let outputs =
     match j with
     |  None ->
-        let output_of_litmus l =
-          TestHerd.run_herd ~bell:None ~cat:None
-            ~conf:flags.herd_conf
-            ~variants:flags.variants
-            ~libdir:flags.libdir
-            flags.herd [l]
-          |> Result.fold ~ok:Fun.id ~error:raise_e
+        let output_of_litmus l = TestHerd.run_herd_one ~herd:flags.herd ~args l
+          |> Result.fold
+               ~ok:(fun result ->
+                     result.TestHerd.status,
+                     result.TestHerd.stdout,
+                     result.TestHerd.stderr
+               )
+               ~error:raise_e
         in
-        List.map (fun l -> output_of_litmus l) litmus_paths
+        List.map output_of_litmus litmus_paths
   | Some j ->
      ignore
-       (TestHerd.run_herd_concurrent  ~bell:None ~cat:None
-          ~conf:flags.herd_conf
-          ~variants:flags.variants
-          ~libdir:flags.libdir
-          flags.herd ~j:j litmus_paths) ;
+       (TestHerd.run_herd ~j ~herd:flags.herd ~args litmus_paths) ;
      List.map
        (fun l ->
          0,

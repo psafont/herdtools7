@@ -137,6 +137,9 @@ let show_tests_par j flags =
         ~conf:flags.conf
         ~variants:flags.variants
         ~libdir:flags.libdir
+        ~timeout:None
+        ~speedcheck:None
+        ~checkfilter:None
         flags.herd l
       (TestHerd.expected_of_litmus l)
       (Some (TestHerd.expected_failure_of_litmus l))
@@ -202,20 +205,19 @@ let run_tests ?j flags =
 
 
 let promote_tests_seq flags =
-  let output_of_litmus l =
-    TestHerd.run_herd ~bell:None ~cat:None
-      ~conf:flags.conf
-      ~variants:flags.variants
-      ~libdir:flags.libdir
-      flags.herd [l]
+  let args =
+    TestHerd.herd_args ~bell:None ~cat:None ~conf:flags.conf
+      ~variants:flags.variants ~libdir:flags.libdir ~timeout:None
+      ~speedcheck:None ~checkfilter:None
   in
+  let output_of_litmus l = TestHerd.run_herd_one ~herd:flags.herd ~args l in
   let everything_ok = ref true in
   for_each_litmus_in_dir flags.litmus_dir
     (fun litmus ->
       let ok =
-        (output_of_litmus litmus)
-        |> Result.fold ~ok:(TestHerd.promote litmus) ~error:(fun _ -> false)
-  in
+        output_of_litmus litmus
+        |> Result.fold ~ok:TestHerd.promote ~error:(fun _ -> false)
+      in
       if not ok then everything_ok := false) ;
   if not !everything_ok then begin
     Printf.printf "Some tests had errors\n" ;
