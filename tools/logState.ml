@@ -92,7 +92,7 @@ type validation = Undef | Ok | No | DontKnow | Run
 
 let tr_validate kref k v = match kref with
 | (Allow|Forbid) ->
-    begin match k,v with
+    begin match k,(v : validation) with
     | (Allow,Ok)
     | (Forbid,No)
     | (Require,No)
@@ -313,7 +313,7 @@ let parse_kind = function
   | "Undefined" -> Some Undefined
   | _ -> None
 
-let pp_validation = function
+let pp_validation : validation -> string = function
   | Ok -> "Ok"
   | No -> "No"
   | DontKnow -> "??"
@@ -726,7 +726,7 @@ let union_test_gen t1 t2 =
   let (p1,n1) = t1.witnesses and (p2,n2) = t2.witnesses in
   let p = Int64.add p1 p2 and n = Int64.add n1 n2 in
   let v = match k with
-  | Allow -> if gt0 p then Ok else No
+  | Allow -> if gt0 p then (Ok : validation) else No
   | Forbid | Require -> if gt0 n then No else Ok
   | _ -> DontKnow in
 
@@ -1125,7 +1125,7 @@ let uniq _is_litmus name =
     let p = Int64.add p1 p2 and n = Int64.add n1 n2 in
     let v = match k with
     | Allow ->
-        if gt0 p then Ok else No
+        if gt0 p then (Ok : validation) else No
     | Forbid | Require -> if gt0 n then No else Ok
     | NoKind|Undefined -> DontKnow
     | ErrorKind -> assert false in

@@ -557,7 +557,7 @@ module Make
     module Shown = struct
       type t = Rel of S.event_rel | Set of S.event_set
 
-      let apply_rel f (sr:t) = match sr with
+      let apply_rel f (sr:t) : t = match sr with
         | Rel r -> Rel (f r)
         | Set _ -> sr
     end

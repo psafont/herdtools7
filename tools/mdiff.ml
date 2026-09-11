@@ -140,7 +140,7 @@ let zyva log1 log2  =
   | Some h -> fprintf chan "Hash=%s\n" h in
 
 
-  let dump_condition chan v c = match c,v with
+  let dump_condition chan (v : validation) c = match c,v with
   | Some c,(Ok|No) ->
       fprintf chan
         "Condition %a is%s validated\n"

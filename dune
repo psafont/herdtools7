@@ -5,13 +5,13 @@
 (env
  (release
   (flags
-   (:standard -w +a-3-4-29-41-45-70)))
+   (:standard -w +a-4-29-45-70)))
  (dev
   (flags
-   (:standard -warn-error +A -w +a-3-4-29-41-45-70)))
+   (:standard -warn-error +A -w +a-4-29-45-70)))
  (static
   (flags
-   (:standard -cclib -static -w +a-3-4-29-41-45-70))))
+   (:standard -cclib -static -w +a-4-29-45-70))))
 
 (alias
  (name default)

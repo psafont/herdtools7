@@ -160,7 +160,7 @@ module Make(O:Arch_litmus.Config)(V:Constant.S) = struct
 
     let dump_instr dump v =
       let open Constant in
-      match v with
+      match (v : ('a, 'b, 'c, 'd) Constant.t) with
       | Instruction i -> instr_name i
       | Symbolic (Virtual {name=Symbol.Label(p,l);_})
           -> SkelUtil.instr_symb_id (OutUtils.fmt_lbl_var p l)

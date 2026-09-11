@@ -49,13 +49,11 @@ type signature_err =
     is_key_a : bool ;
   }
 
-type signature
-  = Ok of signature_ok
-  | Err of signature_err
+type signature = (signature_ok, signature_err) result
 
 let signature_name = function
   | Ok ok -> ok.ok_name
-  | Err err -> err.err_name
+  | Error err -> err.err_name
 
 let compare_signature_ok p1 p2 =
   match compare_key p1.key p2.key with
@@ -78,9 +76,9 @@ let compare_signature_err p1 p2 =
 let compare_signature p1 p2 =
   match p1,p2 with
   | Ok ok1, Ok ok2 -> compare_signature_ok ok1 ok2
-  | Err err1,Err err2 -> compare_signature_err err1 err2
-  | Ok _,Err _ -> -1
-  | Err _,Ok _ -> 1
+  | Error err1, Error err2 -> compare_signature_err err1 err2
+  | Ok _, Error _ -> -1
+  | Error _,Ok _ -> 1
 
 module PacSet = Set.Make (struct
   type t = signature
@@ -109,9 +107,9 @@ let add name key modifier offset pac =
 let error name key  =
   match key with
   | DA | IA ->
-      PacSet.singleton (Err {err_name= name; is_key_a= true})
+      PacSet.singleton (Error {err_name= name; is_key_a= true})
   | DB | IB ->
-      PacSet.singleton (Err {err_name= name; is_key_a= false})
+      PacSet.singleton (Error {err_name= name; is_key_a= false})
 
 (* Return the exclusive XOR of two sets of PAC fields, can be optimised but
    it's probably not very usefull as the size of the equations will be very
@@ -142,7 +140,7 @@ let pp pac s offset =
           (Printf.sprintf "pac%s(%s,%s)"
             (pp_lower_key ok.key) (do_rec ok.offset xs) ok.modifier)
           (offset - ok.offset)
-    | Err err :: xs ->
+    | Error err :: xs ->
         pp_index
           (Printf.sprintf "non-canonical(%s,%s)"
             (do_rec 0 xs) (if err.is_key_a then "A" else "B"))
@@ -230,7 +228,7 @@ let new_basic_variable (x: t) : signature option =
         if compare_signature p min > 0
         then Some min
         else Some p
-    | Err _,_ ->
+    | Error _,_ ->
         min_opt
   ) x None
 

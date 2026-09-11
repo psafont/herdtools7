@@ -1026,7 +1026,7 @@ type adda_op_variant = za_direction
 module CTERM = struct
   type cond = EQ|NE
 
-  let pp = function
+  let pp : cond -> string = function
     | EQ -> "CTERMEQ"
     | NE -> "CTERMNE"
 end
@@ -1035,7 +1035,7 @@ module Ext = struct (* Arguments of extended ADD and SUB operations *)
 
   type op = ADD|ADDS|SUB|SUBS
 
-  let pp_op =  function
+  let pp_op : op -> string = function
     | ADD -> "ADD"
     | ADDS -> "ADDS"
     | SUB -> "SUB"
@@ -1126,15 +1126,15 @@ module OpExt = struct (* Third argumen tabnd extension of operations *)
     | ASR of 'k
     | ROR of 'k
 
-  let no_shift = LSL 0
+  let no_shift : 'a shift = LSL 0
 
-  let map_shift f = function
+  let map_shift (f : 'a -> 'b) : 'a shift -> 'b shift = function
     | LSL k -> LSL (f k)
     | LSR k -> LSR (f k)
     | ASR k ->  ASR (f k)
     | ROR k ->  ROR (f k)
 
-  let is_no_shift = function
+  let is_no_shift : 'a shift -> bool = function
     | LSL 0
     | LSR 0
     | ASR 0
@@ -1146,7 +1146,7 @@ module OpExt = struct (* Third argumen tabnd extension of operations *)
     | ROR _
       -> false
 
-  let pp_shift m = function
+  let pp_shift m : 'a shift -> string = function
     | LSL k | LSR k | ASR k | ROR k
          when m.zerop k ->
        ""
@@ -1178,13 +1178,13 @@ module  MOPLExt = struct
 
   type sop = s * op
 
-  let memo sop = match sop with
+  let memo (sop : sop) = match sop with
     | Signed,ADD -> "SMADDL"
     | Signed,SUB -> "SMSUBL"
     | Unsigned,ADD -> "UMADDL"
     | Unsigned,SUB -> "UMSUBL"
 
-  let memo_z sop = match sop with
+  let memo_z (sop : sop) = match sop with
     | Signed,ADD -> "SMULL"
     | Signed,SUB -> "SMNEGL"
     | Unsigned,ADD -> "UMULL"
@@ -1196,11 +1196,11 @@ module MOPExt = struct
 
   type op = ADD | SUB
 
-  let memo op = match op with
+  let memo (op : op) = match op with
     | ADD -> "MADD"
     | SUB -> "MSUB"
 
-  let memo_z op = match op with
+  let memo_z (op : op) = match op with
     | ADD -> "MUL"
     | SUB -> "MNEG"
 

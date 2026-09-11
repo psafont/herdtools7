@@ -414,7 +414,7 @@ module Make(O:Config)(A:I) =
     let dump_init_val = dump_v
 
     let all_regs code fhandler final =
-      let all_ins ins =
+      let all_ins (ins : ins) =
         RegSet.union (RegSet.of_list (ins.inputs@ins.outputs)) in
       let k = List.fold_right all_ins code  (RegSet.of_list final) in
       List.fold_right all_ins fhandler  k

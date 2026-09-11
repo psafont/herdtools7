@@ -1697,7 +1697,7 @@ module Make (TopConf : AArch64Sig.Config) (V : Value.AArch64ASL) :
             if _dbg then
               Printf.eprintf "Got rfms back: %d of them.\n%!" (List.length rfms)
           in
-          let build_conc str rfmap =
+          let build_conc (str : ASLE.event_structure) rfmap =
             profile "build conc" @@ fun () ->
             let partial_po =
               let open ASLE in
