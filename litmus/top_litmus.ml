@@ -150,9 +150,6 @@ end = struct
     | None -> Hint.empty
     | Some fname -> Hint.read fname
 
-  module W = Warn.Make(OT)
-
-
   module Utils (O:Config) (A':Arch_litmus.Base)
            (Lang:Language.S with type t = A'.Out.t)
            (Pseudo:PseudoAbstract.S with type ins = A'.instruction) =

@@ -41,5 +41,5 @@ module No (I:sig type instr end) = struct
   let fun_name _ = ""
   let dump_instr dump v = dump v
 
-  module Make (O:Indent.S) = struct let dump _ = ()  end
+  module Make (_:Indent.S) = struct let dump _ = ()  end
 end

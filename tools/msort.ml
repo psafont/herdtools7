@@ -61,7 +61,7 @@ module Top
 
     exception NotOk
 
-    module Make(A:ArchBase.S)(Pte:PteVal.S)(AddrReg:AddrReg.S) = struct
+    module Make(A:ArchBase.S)(_:PteVal.S)(_:AddrReg.S) = struct
 
       let default_cost pgm =
         let nprocs = List.length pgm in

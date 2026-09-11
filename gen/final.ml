@@ -22,7 +22,7 @@ module type Config = sig
   val variant : Variant_gen.t -> bool
 end
 
-module Make : functor (O:Config) -> functor (C:ArchRun.S) ->
+module Make : functor (_:Config) -> functor (C:ArchRun.S) ->
   sig
 
 (* During compilation of cycle, final state is a

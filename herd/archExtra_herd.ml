@@ -291,15 +291,6 @@ module Make(C:Config) (I:I) : S with module I = I
 
       type proc = Proc.t
 
-      module OV =
-        struct
-          type t = v
-          let compare = I.V.compare
-        end
-
-      module VSet = MySet.Make(OV)
-      module VMap = MyMap.Make(OV)
-
       let pp_proc = Proc.dump
 
       type program_order_index = int

@@ -36,7 +36,7 @@ module
 
 	let atomic_pair_allowed e1 e2 = (e1.E.iiid == e2.E.iiid)
 
-	module Mixed(SZ : ByteSize.S) = struct
+	module Mixed(_: ByteSize.S) = struct
 
       let (>>=)   = M.(>>=)
       let (>>*=)  = M.(>>*=)

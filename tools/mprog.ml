@@ -43,7 +43,7 @@ module Top
     end
 
     (* Transpose dump *)
-    module Transpose(A:ArchBase.S)(Pte:PteVal.S)(AddrReg:AddrReg.S) = struct
+    module Transpose(A:ArchBase.S)(_:PteVal.S)(_:AddrReg.S) = struct
 
       module D =
         TransposeDumper.Make
@@ -181,7 +181,7 @@ module Top
     (*************)
 
     (* No alloc *)
-    module Text(A:ArchBase.S)(Pte:PteVal.S)(AddrReg:AddrReg.S) = struct
+    module Text(A:ArchBase.S)(_:PteVal.S)(_:AddrReg.S) = struct
       module D = DumperMiscParser.Make(O)(A)
 
       let zyva = match O.outputdir with

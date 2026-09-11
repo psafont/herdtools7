@@ -68,7 +68,6 @@ module Preprocess = struct
     (s, eff_phrases)
 end
 
-module EffSet = Set.Make (Eff)
 module P = Parser.HwReq
 
 module MakeInterpreter (NP : NameParser.S) = struct

@@ -64,7 +64,7 @@ module
 (* Semantics proper *)
 (********************)
 
-    module Mixed(SZ:ByteSize.S) = struct
+    module Mixed(_:ByteSize.S) = struct
 
       let (>>=) = M.(>>=)
       let (>>*=) = M.(>>*=)

@@ -22,7 +22,7 @@ open Printf
 module type Config = sig
 end
 
-module Make(Config:Config) =
+module Make(_:Config) =
 struct
   module D = Splitter.Default
   module LU = LexUtils.Make(D)

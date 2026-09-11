@@ -6,7 +6,6 @@ module Config = struct
   let cat = "aarch64.cat"
 end
 
-module S = Structure
 module HR = HwReqs.MakeInterpreter (NameParser.Make (Config))
 
 let () =

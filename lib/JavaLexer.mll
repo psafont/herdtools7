@@ -14,7 +14,7 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 {
-module Make(O:LexUtils.Config) = struct
+module Make(_:LexUtils.Config) = struct
 
 open JavaParser
 

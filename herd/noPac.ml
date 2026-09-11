@@ -14,7 +14,7 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-module No (V:Value.S) = struct
+module No (_:Value.S) = struct
   type arch_pred = unit
 
   let compare_predicate _ _ = 0

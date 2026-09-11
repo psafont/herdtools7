@@ -31,7 +31,7 @@ module Top
           hash : string option; }
     end
 
-    module Make(A:ArchBase.S)(Pte:PteVal.S)(AddrReg:AddrReg.S) = struct
+    module Make(_:ArchBase.S)(_:PteVal.S)(_:AddrReg.S) = struct
 
       let zyva name parsed =
 	let tname = name.Name.name in
@@ -159,8 +159,6 @@ let () =
     usage
 
 let tests = List.rev !arg
-
-module L = LexRename.Make(struct let verbose = !verbose end)
 
 module X =
   Top

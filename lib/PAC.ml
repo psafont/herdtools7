@@ -87,8 +87,6 @@ module PacSet = Set.Make (struct
   let compare = compare_signature
 end)
 
-module PacSetSet = Set.Make (PacSet)
-
 module PacMap = Map.Make (struct
   type t = signature
   let compare = compare_signature

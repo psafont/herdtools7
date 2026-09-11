@@ -234,15 +234,12 @@ module Make(O:Config)(M:XXXMem.S) =
   struct
     open Printf
     module S = M.S
-    module PC = S.O.PC
     module MC = Mem.Make(O)(S)
     module C = S.Cons
     module A = S.A
     module AM = A.Mixed(O)
-    module VC = S.M.VC
 
     module T = Test_herd.Make(A)
-    module W = Warn.Make(O)
 
     let showcutoff = O.variant Variant.CutOff
 

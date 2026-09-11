@@ -23,7 +23,7 @@ module type Config = sig
   val lowercase : bool
 end
 
-module Make : functor (C:Config) -> functor (E:Edge.S) ->
+module Make : functor (_:Config) -> functor (E:Edge.S) ->
   sig
 (* Normalise, return normalised cycle *)
     val normalise : E.edge list ->  E.edge list

@@ -32,7 +32,6 @@
 (******************************************************************************)
 
 module Make (Conf : RunTest.Config) (ModelConfig : MemCat.Config) = struct
-  module ArchConfig = SemExtra.ConfigToArchConfig (Conf)
   module Conf = struct
     module C = Conf
     let libfind = Conf.libfind

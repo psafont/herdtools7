@@ -133,7 +133,6 @@ module Make (TopConf : AArch64Sig.Config) (V : Value.AArch64ASL) :
     end
 
     module MC = Mem.Make (MCConf) (ASLS)
-    module MU = MemUtils.Make (ASLS)
 
     type asl_exec = ASLS.concrete * ASLVC.cnstrnts * ASLS.set_pp * ASLS.rel_pp
 

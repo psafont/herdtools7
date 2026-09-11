@@ -152,12 +152,11 @@ module Make (Conf : Config) = struct
   let barriers = []
   let isync = None
   let atomic_pair_allowed _ _ = true
-  module Mixed (SZ : ByteSize.S) : sig
+  module Mixed (_: ByteSize.S) : sig
     val build_semantics : test -> A.inst_instance_id -> (proc * branch) M.t
     val can_unset_af_loc : event -> A.V.v option
     val spurious_setaf : value:A.V.v -> location:A.V.v -> unit M.t
   end = struct
-    module Mixed = M.Mixed (SZ)
 
     let ( let* ) = M.asl_data
     let ( and* ) = M.( >>| )

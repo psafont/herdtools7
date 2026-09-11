@@ -23,7 +23,6 @@ module C = struct
   let is_morello = false
 end
 
-module AArch64Value = CapabilityValue.Make (C)
 module AArch64 = MakeAArch64Base.Make (C)
 
 module AArch64LexParse = struct

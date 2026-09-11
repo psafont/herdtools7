@@ -16,8 +16,6 @@
 
 (** Utilities for running commands. *)
 
-module Option = Base.Option
-
 type error = {
   binary : string ;
   args   : string list ;

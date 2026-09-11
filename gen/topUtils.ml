@@ -22,7 +22,7 @@ module type Config = sig
   val hexa : bool
 end
 
-module Make : functor (O:Config) -> functor (C:ArchRun.S) ->
+module Make : functor (_:Config) -> functor (C:ArchRun.S) ->
   sig
 (* Coherence utilities *)
     type cos0 =  (string * (C.C.node * IntSet.t) list list) list

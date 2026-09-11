@@ -16,8 +16,6 @@
 
 (** Parse kinds.txt files. *)
 
-module Option = Base.Option
-
 exception ParseError of string
 
 type kind = ConstrGen.kind

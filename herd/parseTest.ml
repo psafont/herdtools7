@@ -165,7 +165,6 @@ end) = struct
         let dirty = dirty
         let statelessrc11 = Conf.statelessrc11
       end in
-      let module ArchConfig = SemExtra.ConfigToArchConfig(Conf) in
       match arch with
       | `PPC ->
          let module X = PPCParseTest.Make(Conf)(ModelConfig) in

@@ -5285,7 +5285,6 @@ Arguments:
 
 (* Test all possible instructions, when appropriate *)
       let check_self test ii =
-        let module InstrSet = AArch64.V.Cst.Instr.Set in
         let exp_pages = get_exposed_codepages test in
         let is_on_exported_page =
           match ii.A.rel_addr with
