@@ -1,0 +1,17 @@
+AArch64 SIMD-STR-SP-postindex
+Variant=memtag,sync,neon
+
+(* Post-indexed SIMD store through SP keeps its data and writeback micro-ops. *)
+{
+  uint64_t x[2]={0,0};
+  [tag(x)]=:green;
+  0:SP=x:green;
+  0:X0=1;
+  0:X1=2;
+  uint128_t 0:V0.2D;
+}
+P0;
+  MOV V0.D[0],X0;
+  MOV V0.D[1],X1;
+  STR Q0,[SP],#16;
+forall(x={1,2} /\ ~fault(P0,x,TagCheck))

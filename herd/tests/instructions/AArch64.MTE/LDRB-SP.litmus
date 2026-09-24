@@ -1,0 +1,12 @@
+AArch64 LDRB-SP
+Variant=memtag,sync
+
+(* Byte immediate LDR is tag-checked even when Rn is SP. *)
+{
+  [x]=1;
+  [tag(x)]=:green;
+  0:SP=x:red;
+}
+P0;
+  LDRB W0,[SP];
+forall(fault(P0,x,TagCheck))

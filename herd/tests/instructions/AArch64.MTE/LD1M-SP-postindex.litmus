@@ -1,0 +1,12 @@
+AArch64 LD1M-SP-postindex
+Variant=memtag,sync,neon
+
+(* LD1 with writeback through SP is tag-checked. *)
+{
+  uint64_t x[2]={1,2};
+  [tag(x)]=:green;
+  0:SP=x:red;
+}
+P0;
+  LD1 {V0.2D},[SP],#16;
+forall(fault(P0,x,TagCheck))

@@ -1,0 +1,10 @@
+Test SIMD-STR-SP Required
+States 1
+x={1,2};  ~Fault(P0,x,TagCheck);
+Ok
+Witnesses
+Positive: 1 Negative: 0
+Condition forall (x={1,2} /\ not (fault(P0,x,TagCheck)))
+Observation SIMD-STR-SP Always 1 0
+Hash=af8747a338a285cac7b96d63c7d1ee50
+

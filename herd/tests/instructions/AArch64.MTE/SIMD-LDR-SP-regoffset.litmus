@@ -1,0 +1,18 @@
+AArch64 SIMD-LDR-SP-regoffset
+Variant=memtag,sync,neon
+
+(* Register-offset SIMD LDR remains tag-checked when Rn is SP. *)
+{
+  uint64_t x[2]={1,2};
+  [tag(x)]=:green;
+  0:SP=x:red;
+  0:X2=0;
+  uint64_t 0:X0;
+  uint64_t 0:X1;
+  uint128_t 0:V0.2D;
+}
+P0;
+  LDR Q0,[SP,X2];
+  MOV X0,V0.D[0];
+  MOV X1,V0.D[1];
+forall(fault(P0,x,TagCheck))

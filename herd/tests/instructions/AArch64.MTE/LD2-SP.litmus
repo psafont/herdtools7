@@ -1,0 +1,12 @@
+AArch64 LD2-SP
+Variant=memtag,sync,neon
+
+(* No-writeback multi-register structure load through SP keeps its micro-ops. *)
+{
+  uint64_t x[4]={1,2,3,4};
+  [tag(x)]=:green;
+  0:SP=x;
+}
+P0;
+  LD2 {V0.2D,V1.2D},[SP];
+forall(~fault(P0,x,TagCheck))

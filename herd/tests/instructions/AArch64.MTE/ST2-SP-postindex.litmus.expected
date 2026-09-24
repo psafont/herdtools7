@@ -1,0 +1,10 @@
+Test ST2-SP-postindex Required
+States 1
+x={0,0,0,0};  ~Fault(P0,x,TagCheck);
+No
+Witnesses
+Positive: 0 Negative: 1
+Condition forall (x={1,2,3,4} /\ not (fault(P0,x,TagCheck)))
+Observation ST2-SP-postindex Never 0 1
+Hash=ae8221cfb15a844f59d15688d3a81a07
+

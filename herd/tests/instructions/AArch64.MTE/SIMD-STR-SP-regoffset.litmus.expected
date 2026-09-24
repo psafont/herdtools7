@@ -1,0 +1,10 @@
+Test SIMD-STR-SP-regoffset Required
+States 1
+ Fault(P0,x:red,TagCheck);
+Ok
+Witnesses
+Positive: 1 Negative: 0
+Condition forall (fault(P0,x,TagCheck))
+Observation SIMD-STR-SP-regoffset Always 1 0
+Hash=1f522b2f8fb8d890656cd3dfd052cda9
+

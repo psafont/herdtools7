@@ -1,0 +1,17 @@
+AArch64 SIMD-LDR-SP
+Variant=memtag,sync,neon
+
+(* No-writeback SIMD load through SP is not tag-checked. *)
+{
+  uint64_t x[2]={1,2};
+  [tag(x)]=:green;
+  0:SP=x;
+  uint64_t 0:X0;
+  uint64_t 0:X1;
+  uint128_t 0:V0.2D;
+}
+P0;
+  LDR Q0,[SP];
+  MOV X0,V0.D[0];
+  MOV X1,V0.D[1];
+forall(0:X0=1 /\ 0:X1=2 /\ ~fault(P0,x,TagCheck))

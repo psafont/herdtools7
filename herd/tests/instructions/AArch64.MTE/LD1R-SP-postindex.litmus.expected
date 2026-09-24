@@ -1,0 +1,10 @@
+Test LD1R-SP-postindex Required
+States 1
+ Fault(P0,x:red,TagCheck);
+Ok
+Witnesses
+Positive: 1 Negative: 0
+Condition forall (fault(P0,x,TagCheck))
+Observation LD1R-SP-postindex Always 1 0
+Hash=8c3d08a2b59d77913be2bb9a6a590c73
+

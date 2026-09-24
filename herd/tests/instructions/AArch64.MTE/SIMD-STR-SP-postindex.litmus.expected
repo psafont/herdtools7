@@ -1,0 +1,10 @@
+Test SIMD-STR-SP-postindex Required
+States 1
+x={0,0};  ~Fault(P0,x,TagCheck);
+No
+Witnesses
+Positive: 0 Negative: 1
+Condition forall (x={1,2} /\ not (fault(P0,x,TagCheck)))
+Observation SIMD-STR-SP-postindex Never 0 1
+Hash=7c8d1a498041b5357401090f39c5dea4
+

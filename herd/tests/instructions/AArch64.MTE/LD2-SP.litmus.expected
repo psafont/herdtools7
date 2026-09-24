@@ -1,0 +1,10 @@
+Test LD2-SP Required
+States 1
+  ~Fault(P0,x,TagCheck);
+Ok
+Witnesses
+Positive: 1 Negative: 0
+Condition forall (not (fault(P0,x,TagCheck)))
+Observation LD2-SP Always 1 0
+Hash=b40e8bc65c824121e9ca26072f4d1cde
+

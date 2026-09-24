@@ -1,0 +1,10 @@
+Test SIMD-STP-SP Required
+States 1
+x={1,2,3,4};  ~Fault(P0,x,TagCheck);
+Ok
+Witnesses
+Positive: 1 Negative: 0
+Condition forall (x={1,2,3,4} /\ not (fault(P0,x,TagCheck)))
+Observation SIMD-STP-SP Always 1 0
+Hash=050702762d70f31d7d6b32bdd54fa8b5
+

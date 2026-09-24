@@ -1,0 +1,22 @@
+AArch64 SIMD-STP-SP
+Variant=memtag,sync,neon
+
+(* No-writeback SIMD pair store through SP is not tag-checked. *)
+{
+  uint64_t x[4]={0,0,0,0};
+  [tag(x)]=:green;
+  0:SP=x;
+  0:X0=1;
+  0:X1=2;
+  0:X2=3;
+  0:X3=4;
+  uint128_t 0:V0.2D;
+  uint128_t 0:V1.2D;
+}
+P0;
+  MOV V0.D[0],X0;
+  MOV V0.D[1],X1;
+  MOV V1.D[0],X2;
+  MOV V1.D[1],X3;
+  STP Q0,Q1,[SP];
+forall(x={1,2,3,4} /\ ~fault(P0,x,TagCheck))

@@ -1,0 +1,18 @@
+AArch64 SIMD-STR-SP-regoffset
+Variant=memtag,sync,neon
+
+(* Register-offset SIMD STR remains tag-checked when Rn is SP. *)
+{
+  uint64_t x[2]={0,0};
+  [tag(x)]=:green;
+  0:SP=x:red;
+  0:X0=1;
+  0:X1=2;
+  0:X2=0;
+  uint128_t 0:V0.2D;
+}
+P0;
+  MOV V0.D[0],X0;
+  MOV V0.D[1],X1;
+  STR Q0,[SP,X2];
+forall(fault(P0,x,TagCheck))

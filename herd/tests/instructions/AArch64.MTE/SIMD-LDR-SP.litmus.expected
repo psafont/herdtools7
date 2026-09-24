@@ -1,0 +1,10 @@
+Test SIMD-LDR-SP Required
+States 1
+0:X0=1; 0:X1=2;  ~Fault(P0,x,TagCheck);
+Ok
+Witnesses
+Positive: 1 Negative: 0
+Condition forall (0:X0=1 /\ 0:X1=2 /\ not (fault(P0,x,TagCheck)))
+Observation SIMD-LDR-SP Always 1 0
+Hash=196f88b555a5dac97b3adad4441310eb
+
