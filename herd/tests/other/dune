@@ -1,4 +1,13 @@
 (cram
  (deps
   (source_tree libdir)
+  ../instructions/AArch64.MTE/SIMD-LDR-SP.litmus
+  ../instructions/AArch64.MTE/SIMD-STR-SP.litmus
+  ../instructions/AArch64.MTE/SIMD-STP-SP.litmus
+  ../instructions/AArch64.MTE/SIMD-LDP-SP.litmus
+  ../instructions/AArch64.MTE/SIMD-STR-SP-postindex.litmus
+  ../instructions/AArch64.MTE/LD1-SP.litmus
+  ../instructions/AArch64.MTE/ST1-SP.litmus
+  ../instructions/AArch64.MTE/LD2-SP.litmus
+  ../instructions/AArch64.MTE/ST2-SP-postindex.litmus
   %{bin:herd7}))
