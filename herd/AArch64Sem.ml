@@ -32,6 +32,11 @@ module Make
      * these are always little endian *)
     let endian = AArch64.endian
     let memtag = C.variant Variant.MemTag
+    let mte_check_loads = memtag && not C.mte_store_only
+
+    let mte_check_load tagchecked = tagchecked && mte_check_loads
+    let mte_check_store tagchecked = tagchecked && memtag
+
     let morello = C.variant Variant.Morello
     let sme = C.variant Variant.SME
     let sve = C.variant Variant.SVE || sme
@@ -679,6 +684,10 @@ module Make
 (* Decompose tagged location *)
       let tag_extract a = M.op1 Op.TagExtract a
       let loc_extract a = M.op1 Op.LocExtract a
+
+      let mte_untag_address tagchecked ma =
+        if memtag && not tagchecked then ma >>= fun a -> loc_extract a
+        else ma
 
 (*  Low level tag access *)
       let do_read_tag a ii =
@@ -1767,41 +1776,154 @@ Arguments:
             domain in
         M.delay_kont "at::check_ptw" ma maccess
 
-      let do_ldr rA sz an mop ma ii =
-(* Generic load *)
-        let checked = memtag && not C.mte_store_only in
-        let ma =
-          (* Extract location without a tag from an address *)
-          if memtag && C.mte_store_only then
-            ma >>= fun a -> loc_extract a
-          else ma in
-        lift_memop ~tag:"LD" rA Dir.R false checked
-          (fun ac ma _mv -> (* value fake here *)
-            let memtag_sync = checked && (is_mte_sync Dir.R) in
-            if memtag_sync || Access.is_physical ac || pac then
-              M.bind_ctrldata ma (mop ac)
-            else
-              ma >>= mop ac)
-          (to_perms "r" sz)
-          ma mzero an ii
+      module Ld : sig
+        val checked :
+          B.reg -> MachSize.sz -> Annot.t ->
+          (Access.t -> v -> 'a M.t) -> v M.t ->
+          A.inst_instance_id -> branch M.t
+        (** [checked rA sz an mop ma ii] builds a load handler whose access
+            policy requests MTE tag checking. [rA] is the base register; [sz]
+            is the access size; [an] is the access annotation; [mop] is the
+            memory-operation callback; [ma] is the address computation; and
+            [ii] identifies the instruction instance. The MTE configuration
+            determines whether the requested check is enabled. *)
 
-(* Generic store *)
-      let do_str rA mop sz an ma mv ii =
-        lift_memop ~tag:"ST" rA Dir.W true memtag
-          (fun ac ma mv ->
-            let memtag_sync = memtag && (is_mte_sync Dir.W) in
-            if pac || memtag_sync || (is_branching && Access.is_physical ac) then begin
-              (* additional ctrl dep on address *)
-              M.bind_ctrldata_data ma mv
-                (fun a v -> mop ac a v ii)
-            end else if morello then
-              (* additional ctrl dep on address and data *)
-              do_insert_commit (ma >>| mv)
-                (fun (a,v) -> mop ac a v ii)
-                ii
-            else
-              (ma >>| mv) >>= fun (a,v) -> mop ac a v ii)
-          (to_perms "w" sz) ma mv an ii
+        val no_writeback :
+          B.reg -> MachSize.sz -> Annot.t ->
+          (Access.t -> v -> 'a M.t) -> v M.t ->
+          A.inst_instance_id -> branch M.t
+        (** [no_writeback rA sz an mop ma ii] builds a load handler whose access
+            policy requests MTE tag checking when [rA] is not the stack
+            pointer. The arguments have the same meanings as for {!checked}. *)
+
+
+        val structure_postindex :
+          B.reg -> int AArch64Base.kr -> MachSize.sz -> Annot.t ->
+          (Access.t -> v -> 'a M.t) -> v M.t ->
+          A.inst_instance_id -> branch M.t
+        (** [structure_postindex rA kr sz an mop ma ii] builds a load handler
+            for a structure post-indexed access. When [kr] is [K 0], tag
+            checking is requested only if [rA] is not the stack pointer. For
+            other [kr] values, tag checking is requested. The arguments have
+            the same meanings as for {!checked}. *)
+      end = struct
+        let generic ~tagchecked rA sz an mop ma ii =
+          let checked = mte_check_load tagchecked in
+          let ma = mte_untag_address checked ma in
+          lift_memop ~tag:"LD" rA Dir.R false checked
+            (fun ac ma _mv -> (* value fake here *)
+            let memtag_sync = checked && (is_mte_sync Dir.R) in
+              if memtag_sync || Access.is_physical ac || pac then
+                M.bind_ctrldata ma (mop ac)
+              else
+                ma >>= mop ac)
+            (to_perms "r" sz)
+            ma mzero an ii
+
+        let checked rA = generic ~tagchecked:true rA
+
+        let unchecked rA = generic ~tagchecked:false rA
+
+        let no_writeback rA = generic ~tagchecked:(rA <> AArch64Base.SP) rA
+
+        let structure_postindex rA kr =
+          let tagchecked = match kr with
+            | AArch64.K 0 -> rA <> AArch64Base.SP
+            | _ -> true in
+          generic ~tagchecked rA
+      end
+
+      module St : sig
+        val checked :
+          B.reg -> (Access.t -> v -> v -> A.inst_instance_id -> 'a M.t) ->
+          MachSize.sz -> Annot.t -> v M.t -> v M.t ->
+          A.inst_instance_id -> branch M.t
+        (** [checked rA mop sz an ma mv ii] builds a store handler whose
+            policy requests MTE tag checking. [mop] is the memory-operation
+            callback; [sz] is the access size; [an] is the access annotation;
+            [ma] is the address computation; [mv] is the value to store; and
+            [ii] identifies the instruction instance. *)
+
+        val no_writeback :
+          B.reg -> (Access.t -> v -> v -> A.inst_instance_id -> 'a M.t) ->
+          MachSize.sz -> Annot.t -> v M.t -> v M.t ->
+          A.inst_instance_id -> branch M.t
+        (** [no_writeback rA mop sz an ma mv ii] builds a store handler whose
+            policy requests MTE tag checking when [rA] is not the stack
+            pointer. Its arguments have the same meanings as for {!checked}. *)
+
+        val postindex :
+          B.reg -> (Access.t -> v -> v -> A.inst_instance_id -> 'a M.t) ->
+          MachSize.sz -> Annot.t -> v M.t -> v M.t ->
+          A.inst_instance_id -> branch M.t
+        (** [postindex rA mop sz an ma mv ii] builds a post-indexed store
+            handler. Its policy requests MTE tag checking when [rA] is not
+            the stack pointer, while preserving the original address value. *)
+
+        val structure_postindex :
+          B.reg -> int AArch64Base.kr ->
+          (Access.t -> v -> v -> A.inst_instance_id -> 'a M.t) ->
+          MachSize.sz -> Annot.t -> v M.t -> v M.t ->
+          A.inst_instance_id -> branch M.t
+        (** [structure_postindex rA kr mop sz an ma mv ii] builds a store
+            handler for a structure post-indexed access. Its policy requests
+            MTE tag checking when [rA] is not the stack pointer and preserves
+            the original address value. [kr] does not affect that decision.
+            The remaining arguments have the same meanings as for {!checked}. *)
+
+        val atomic_no_writeback :
+          B.reg -> bool ->
+          (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+          string -> v M.t -> v M.t -> Annot.t ->
+          A.inst_instance_id -> branch M.t
+        (** [atomic_no_writeback rA updatedb mop perms ma mv an ii] builds
+            the memory operation for a custom atomic store. Its policy
+            requests MTE tag checking when [rA] is not the stack pointer.
+            [updatedb] controls the page-table dirty-bit update; [mop] is the
+            custom memory operation; [perms] gives the required permissions;
+            [ma] and [mv] are the address and value computations; [an] is the
+            access annotation; and [ii] identifies the instruction instance. *)
+      end = struct
+        let generic ?(preserve_tagged_address=false) ~tagchecked rA mop sz an ma mv ii =
+          let checked = mte_check_store tagchecked in
+          let ma =
+            if preserve_tagged_address then ma
+            else mte_untag_address tagchecked ma in
+          lift_memop ~tag:"ST" rA Dir.W true checked
+            (fun ac ma mv ->
+              let open Precision in
+              let memtag_sync = memtag && C.mte_precision = Synchronous in
+              if pac || memtag_sync || (is_branching && Access.is_physical ac) then begin
+                (* additional ctrl dep on address *)
+                M.bind_ctrldata_data ma mv
+                  (fun a v -> mop ac a v ii)
+              end else if morello then
+                (* additional ctrl dep on address and data *)
+                do_insert_commit (ma >>| mv)
+                  (fun (a,v) -> mop ac a v ii)
+                  ii
+              else
+                (ma >>| mv) >>= fun (a,v) -> mop ac a v ii)
+            (to_perms "w" sz) ma mv an ii
+
+        let no_writeback rA = generic ~tagchecked:(rA <> AArch64Base.SP) rA
+
+        let postindex rA =
+          generic ~preserve_tagged_address:true
+            ~tagchecked:(rA <> AArch64Base.SP) rA
+
+        let checked rA = generic ~tagchecked:true rA
+
+        let unchecked rA = generic ~tagchecked:false rA
+
+        let structure_postindex rA _kr = postindex rA
+        let atomic_no_writeback rA updatedb mop perms ma mv an ii =
+          (* STXR, SWP and LSE atomic ops *)
+          let tagchecked = rA <> AArch64Base.SP in
+          lift_memop rA Dir.W updatedb (mte_check_store tagchecked) mop perms
+            (mte_untag_address tagchecked ma) mv an ii
+
+      end
 
 (***********************)
 (* Memory instructions *)
@@ -1914,7 +2036,7 @@ Arguments:
         M.add addr k >>= fun new_addr ->
         write_reg rA new_addr ii
 
-      let ldr0 op sz rd rs e ii =
+      let ldr0 load_no_writeback op sz rd rs e ii =
 (* Ordinary loads *)
         let open AArch64Base in
         let open MemExt in
@@ -1922,11 +2044,11 @@ Arguments:
           do_read_mem_op op sz Annot.N aexp ac rd a ii in
         match e with
         | Imm (k,Idx) ->
-           do_ldr rs sz Annot.N mop (get_ea_idx rs k ii) ii
+           load_no_writeback rs sz Annot.N mop (get_ea_idx rs k ii) ii
         | Imm (k,PreIdx) ->
-            do_ldr rs sz Annot.N mop (get_ea_preindexed rs k ii) ii
+           Ld.checked rs sz Annot.N mop (get_ea_preindexed rs k ii) ii
         | Reg (v,ri,sext,s) ->
-           do_ldr rs sz Annot.N mop (get_ea_reg rs v ri sext s ii) ii
+           Ld.checked rs sz Annot.N mop (get_ea_reg rs v ri sext s ii) ii
         | Imm (k,PostIdx) ->
            (* This case differs signicantly from others,
             * as update of base address register is part
@@ -1936,17 +2058,18 @@ Arguments:
            M.delay_kont "ldr_postindex"
              (read_reg_addr rs ii)
              (fun a_virt ma ->
-               do_ldr rs sz Annot.N
+               Ld.checked rs sz Annot.N
                  (fun ac a ->
                    read_mem_postindexed
                      a_virt op sz Annot.N aexp ac rd rs k a ii)
                  ma ii)
         | _ -> assert false
 
-      let ldr sz = ldr0 (uxt_op sz) sz
+      let ldr sz = ldr0 Ld.no_writeback (uxt_op sz) sz
       and ldrsw rd rs e ii =
         let sz = MachSize.Word in
-        ldr0 (sxt_op sz) sz rd rs e ii
+        ldr0 Ld.no_writeback (sxt_op sz) sz rd rs e ii
+      and ldrbh sz = ldr0 Ld.checked (uxt_op sz) sz
       and ldrs sz var =
         (*
          * Load signed - sign extends to either 32 or 64 bit value
@@ -1958,7 +2081,7 @@ Arguments:
           | MachSize.Word ->
              fun v -> sxt_op sz v >>=  uxt_op MachSize.Word
           | _ -> assert false in
-        ldr0 op sz
+        ldr0 Ld.no_writeback op sz
 
       module LoadPair
           (Read:
@@ -1974,7 +2097,7 @@ Arguments:
               M.delay_kont "ldp_wback"
                 (read_reg_addr rs ii >>= add_if (not post) k)
                 (fun a_virt ma ->
-                  do_ldr rs sz Annot.N
+                  Ld.checked rs sz Annot.N
                     (fun ac a ->
                       (add_if post k a_virt >>=
                        fun b -> write_reg rs b ii) >>|
@@ -2009,7 +2132,7 @@ Arguments:
                   match an with
                   | Annot.Q -> M.seq_mem
                   | _ -> (>>|) in
-                do_ldr rs sz Annot.N
+                Ld.no_writeback rs sz Annot.N
                   (fun ac a ->
                     Read.read_mem sz an aexp ac rd1 a ii >>|
                 begin
@@ -2043,7 +2166,7 @@ Arguments:
         let open AArch64 in
         let open Annot in
         let an = match t with XP -> EX | AXP -> EXA in
-        do_ldr rs sz an
+        Ld.no_writeback rs sz an
           (fun ac a ->
             read_mem_reserve sz an aexp ac rd1 a ii >>||
             begin
@@ -2059,7 +2182,7 @@ Arguments:
         | AA -> Annot.A
         | AX -> Annot.EXA
         | AQ -> Annot.Q in
-        do_ldr rs sz an
+        Ld.no_writeback rs sz an
           (fun ac a ->
             let read =
               match t with
@@ -2070,8 +2193,8 @@ Arguments:
             read aexp ac rd a ii)
           (read_reg_addr rs ii)  ii
 
-      let str_simple sz rs rd m_ea ii =
-        do_str rd
+      let str_simple store sz rs rd m_ea ii =
+        store rd
           (fun ac a v ii ->
             M.data_input_next
               (M.unitT v)
@@ -2079,18 +2202,18 @@ Arguments:
           sz Annot.N
           m_ea (read_reg_data_sz sz rs ii) ii
 
-      let str sz rs rd e ii =
+      let str store_no_writeback sz rs rd e ii =
         let open AArch64Base in
         let open MemExt in
         match e with
         | Imm (k,Idx) ->
-           str_simple sz rs rd  (get_ea_idx rd k ii)  ii
+           str_simple store_no_writeback sz rs rd (get_ea_idx rd k ii) ii
         | Imm (k,PostIdx) ->
            let m =
              M.delay_kont "str_post"
                (read_reg_addr rd ii)
                (fun a_virt ma ->
-                 do_str rd
+                 St.checked rd
                    (fun ac a v ii ->
                      M.add a_virt (V.intToV k) >>= fun b -> write_reg rd b ii
                      >>|
@@ -2102,9 +2225,9 @@ Arguments:
            if kvm then M.upOneRW (is_this_reg rd) m
            else m
         | Imm (k,PreIdx) ->
-           str_simple sz rs rd (get_ea_preindexed rd k ii) ii
+           str_simple St.checked sz rs rd (get_ea_preindexed rd k ii) ii
         | Reg (v,ri,sext,s) ->
-            str_simple sz rs rd (get_ea_reg rd v ri sext s ii) ii
+           str_simple St.checked sz rs rd (get_ea_reg rd v ri sext s ii) ii
         | _ -> assert false
 
 
@@ -2115,7 +2238,7 @@ Arguments:
             M.delay_kont "stp_wback"
               (read_reg_addr rd ii >>= add_if (not post) k)
               (fun a_virt ma ->
-                do_str rd
+                St.checked rd
                   (fun ac a _ ii ->
                     (add_if post k a_virt >>=
                        fun b -> write_reg rd b ii) >>|
@@ -2153,7 +2276,7 @@ Arguments:
               | AArch64.(`Pa|`PaN|`PaL) -> (>>|)
               | AArch64.(`PaIL) -> M.seq_mem in
             let (>>>) = M.data_input_next in
-            do_str rd
+            St.no_writeback rd
               (fun ac a _ ii ->
                 (read_reg_data_sz sz rs1 ii >>> fun v ->
                   do_write_mem sz an aexp ac a v ii) >>|
@@ -2170,7 +2293,8 @@ Arguments:
             stp_wback sz an rs1 rs2 rd k false ii
 
       let stlr sz rs rd ii =
-        do_str rd (do_write_mem sz Annot.L aexp) sz Annot.L
+        St.no_writeback rd
+          (do_write_mem sz Annot.L aexp) sz Annot.L
           (read_reg_addr rd ii) (read_reg_data_sz sz rs ii) ii
 
       and do_stxr ms mw sz t rr rd ii  =
@@ -2178,7 +2302,7 @@ Arguments:
         let an = match t with
           | YY -> Annot.EX
           | LY -> Annot.EXL in
-        lift_memop rd Dir.W true memtag
+        St.atomic_no_writeback rd true
           (fun ac ma mv ->
             let must_fail =
               begin
@@ -2245,8 +2369,7 @@ Arguments:
         | RMW_A | RMW_AL -> A
 
       let swp sz rmw r1 r2 r3 ii =
-        lift_memop r3 Dir.W true (* swp is a write for the purpose of DB *)
-          memtag
+        St.atomic_no_writeback r3 true (* swp is a write for the purpose of DB *)
           (fun ac ma mv ->
             let noret = match r2 with | AArch64.ZR -> true | _ -> false in
             let r2 = mv
@@ -2470,7 +2593,7 @@ Arguments:
           |A_ADD|A_EOR|A_SET|A_CLR|A_UMAX|A_UMIN -> M.unitT in
 
         let an = rmw_to_read rmw in
-        lift_memop rn Dir.W true memtag
+        St.atomic_no_writeback rn true
           (fun ac ma mv ->
             let noret = match rt with | ZR -> true | _ -> false in
             let op = match op with
@@ -4182,7 +4305,7 @@ Arguments:
             ldrsw rd rs e ii
         | I_LDRBH (bh, rd, rs, e) ->
             let sz = bh_to_sz bh in
-            ldr sz rd rs e ii
+            ldrbh sz rd rs e ii
         | I_LDRS ((v, bh), rd, rs, e) ->
             let sz = bh_to_sz bh in
             ldrs sz (tr_variant v) rd rs e ii
@@ -4196,9 +4319,9 @@ Arguments:
             let sz = bh_to_sz bh in
             ldar sz t rd rs ii
         | I_STR(var,rs,rd,e) ->
-            str (tr_variant var) rs rd e ii
+            str St.no_writeback (tr_variant var) rs rd e ii
         | I_STRBH(bh,rs,rd,e) ->
-            str (bh_to_sz bh) rs rd e ii
+            str St.checked (bh_to_sz bh) rs rd e ii
         | I_STLR(var,rs,rd) ->
             stlr (tr_variant var) rs rd ii
 
@@ -5092,7 +5215,7 @@ Arguments:
               match C.variant Variant.NV2, off with
               | true, Some off ->
                 let rd = SysReg AArch64.VNCR_EL2 in
-                str_simple sz xt rd (get_ea_idx rd off ii) ii
+                str_simple St.no_writeback sz xt rd (get_ea_idx rd off ii) ii
               | _, _ ->
                 read_reg_ord_sz sz xt ii
                 >>= fun v -> write_reg_dest (SysReg sreg) v ii
