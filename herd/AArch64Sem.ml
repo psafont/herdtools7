@@ -1806,6 +1806,33 @@ Arguments:
             checking is requested only if [rA] is not the stack pointer. For
             other [kr] values, tag checking is requested. The arguments have
             the same meanings as for {!checked}. *)
+
+        val predicated_no_writeback :
+          ('a M.t -> 'a M.t -> 'b M.t) -> B.reg ->
+          ((MachSize.sz -> Annot.t ->
+            (Access.t -> v -> 'c M.t) -> v M.t ->
+            A.inst_instance_id -> branch M.t) -> 'a M.t) ->
+          'b M.t
+        (** [predicated_no_writeback select rA access] uses [select] to choose
+            between [access] applied to {!no_writeback} for [rA], or
+            {!unchecked}. *)
+
+        val predicated_register_offset :
+          ('a M.t -> 'a M.t -> 'b M.t) -> B.reg ->
+          ((MachSize.sz -> Annot.t ->
+            (Access.t -> v -> 'c M.t) -> v M.t ->
+            A.inst_instance_id -> branch M.t) -> 'a M.t) ->
+          'b M.t
+        (** [predicated_register_offset select rA access] uses [select] to choose
+            between [access] applied to {!checked} for [rA], or {!unchecked}. *)
+
+        val precheck_lane :
+          B.reg -> MachSize.sz -> v M.t -> A.inst_instance_id -> branch M.t
+        (** [precheck_lane rA sz ma ii] performs an MTE precheck for the lane
+            address [ma], using [rA] as the base register and [sz] as the
+            access size. The precheck uses a no-action memory operation. If
+            MTE load checking is disabled, the function returns [Next] without
+            performing the precheck. *)
       end = struct
         let generic ~tagchecked rA sz an mop ma ii =
           let checked = mte_check_load tagchecked in
@@ -1831,6 +1858,18 @@ Arguments:
             | AArch64.K 0 -> rA <> AArch64Base.SP
             | _ -> true in
           generic ~tagchecked rA
+
+        let predicated_no_writeback select rA access =
+          select (access (no_writeback rA)) (access (unchecked rA))
+
+        let predicated_register_offset select rA access =
+          select (access (checked rA)) (access (unchecked rA))
+
+        let precheck_lane rA sz ma ii =
+          if not (mte_check_load true) then M.unitT (B.Next [])
+          else
+            generic ~tagchecked:true rA sz Annot.N
+              (fun _ac _addr -> M.mk_singleton_es Act.NoAction ii) ma ii
       end
 
       module St : sig
@@ -1871,6 +1910,36 @@ Arguments:
             the original address value. [kr] does not affect that decision.
             The remaining arguments have the same meanings as for {!checked}. *)
 
+        val predicated_no_writeback :
+          ('a M.t -> 'a M.t -> 'b M.t) -> B.reg ->
+          (((Access.t -> v -> v -> A.inst_instance_id -> 'c M.t) ->
+            MachSize.sz -> Annot.t -> v M.t -> v M.t ->
+            A.inst_instance_id -> branch M.t) -> 'a M.t) ->
+          'b M.t
+        (** [predicated_no_writeback select rA access] applies [access] to
+            the no-writeback store handler for [rA] and to a handler that does
+            not request tag checking. [select] receives the active result
+            first and the inactive result second. *)
+
+        val predicated_register_offset :
+          ('a M.t -> 'a M.t -> 'b M.t) -> B.reg ->
+          (((Access.t -> v -> v -> A.inst_instance_id -> 'c M.t) ->
+            MachSize.sz -> Annot.t -> v M.t -> v M.t ->
+            A.inst_instance_id -> branch M.t) -> 'a M.t) ->
+          'b M.t
+        (** [predicated_register_offset select rA access] applies [access] to
+            the checked store handler for [rA] and to a handler that does not
+            request tag checking. [select] receives the active result first
+            and the inactive result second. *)
+
+        val precheck_lane :
+          B.reg -> MachSize.sz -> v M.t -> A.inst_instance_id -> branch M.t
+        (** [precheck_lane rA sz ma ii] performs an MTE precheck for the lane
+            address [ma], using [rA] as the base register and [sz] as the
+            access size. The precheck uses a no-action memory operation. If
+            MTE store checking is disabled, the function returns [Next]
+            without performing the precheck. *)
+
         val atomic_no_writeback :
           B.reg -> bool ->
           (Access.t -> v M.t -> v M.t -> 'a M.t) ->
@@ -1883,6 +1952,41 @@ Arguments:
             custom memory operation; [perms] gives the required permissions;
             [ma] and [mv] are the address and value computations; [an] is the
             access annotation; and [ii] identifies the instruction instance. *)
+
+        val cas_no_writeback :
+          (tag:string -> B.reg -> Dir.dirn -> bool -> bool ->
+           (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+           string -> v M.t -> v M.t -> Annot.t ->
+           A.inst_instance_id -> branch M.t) ->
+          MachSize.sz -> Annot.t -> B.reg -> v M.t -> v M.t ->
+          (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+          (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+          (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+          A.inst_instance_id -> branch M.t
+        (** [cas_no_writeback lift sz an rn ma mv mop_success
+            mop_fail_with_wb mop_fail_no_wb ii] builds the CAS memory
+            operation using the no-writeback tag-check policy: tag checking
+            is requested when [rn] is not the stack pointer. [lift] applies a
+            memory operation; [sz] is its access size; [an] is its annotation;
+            [ma] and [mv] are the address and value computations; the three
+            [mop_] arguments describe the success, failure-with-writeback,
+            and failure-without-writeback cases; and [ii] identifies the
+            instruction instance. *)
+
+        val cas_unchecked :
+          (tag:string -> B.reg -> Dir.dirn -> bool -> bool ->
+           (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+           string -> v M.t -> v M.t -> Annot.t ->
+           A.inst_instance_id -> branch M.t) ->
+          MachSize.sz -> Annot.t -> B.reg -> v M.t -> v M.t ->
+          (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+          (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+          (Access.t -> v M.t -> v M.t -> 'a M.t) ->
+          A.inst_instance_id -> branch M.t
+        (** [cas_unchecked lift sz an rn ma mv mop_success
+            mop_fail_with_wb mop_fail_no_wb ii] builds the CAS memory
+            operation without requesting MTE tag checking. The arguments have
+            the same meanings as for {!cas_no_writeback}. *)
       end = struct
         let generic ?(preserve_tagged_address=false) ~tagchecked rA mop sz an ma mv ii =
           let checked = mte_check_store tagchecked in
@@ -1917,12 +2021,96 @@ Arguments:
         let unchecked rA = generic ~tagchecked:false rA
 
         let structure_postindex rA _kr = postindex rA
+
+        let predicated_no_writeback select rA access =
+          select (access (no_writeback rA)) (access (unchecked rA))
+
+        let predicated_register_offset select rA access =
+          select (access (checked rA)) (access (unchecked rA))
+
+        let precheck_lane rA sz ma ii =
+          if not (mte_check_store true) then M.unitT (B.Next [])
+          else
+            generic ~tagchecked:true rA
+              (fun _ac _addr _value _ii -> M.mk_singleton_es Act.NoAction ii)
+              sz Annot.N ma mzero ii
+
         let atomic_no_writeback rA updatedb mop perms ma mv an ii =
           (* STXR, SWP and LSE atomic ops *)
           let tagchecked = rA <> AArch64Base.SP in
           lift_memop rA Dir.W updatedb (mte_check_store tagchecked) mop perms
             (mte_untag_address tagchecked ma) mv an ii
 
+        let cas_fail_with lift do_wb sz an rn ma mv mop tagchecked ii =
+          let action checked ma =
+            let do_action updatedb checked ma =
+                (* Dir.W would force check for dbm bit:                  *)
+                (* - if set then either update or not db bit per R_TXGHB *)
+                (* - if unset raise Permission fault                     *)
+                lift ~tag:"FAIL" rn Dir.W updatedb checked mop (to_perms "rw" sz) ma mv an ii
+            in
+            if do_wb then
+              do_action true checked ma
+            else begin
+              (* When there is no writeback, It is IMPLEMENTATION SPECIFIC *)
+              (* if there is an update to the dirty bit of the TTD *)
+              let proc = ii.AArch64.proc in
+              let tthm = dirty.DirtyBit.tthm proc
+              and hd = dirty.DirtyBit.hd proc in
+              let may_update_db = tthm && hd in
+              if may_update_db then
+                M.altT (do_action true checked ma) (do_action false checked ma)
+              else
+                do_action false checked ma
+            end
+          in
+
+          if memtag && tagchecked && C.mte_store_only then
+            (* If FEAT_MTE_STORE_ONLY is implemented it is              *)
+            (* CONSTRAINED UNPREDICTABLE whether the Tag Check          *)
+            (* operation is performed.                                  *)
+            M.altT (
+              (* No Tag Check *)
+              (* Extract location without a tag from an address *)
+              let ma = ma >>= fun a -> loc_extract a in
+              action false ma
+            )(
+              (* Tag Check *)
+              action true ma
+            )
+          else
+            action (memtag && tagchecked) ma
+
+        let cas_generic tagchecked lift sz an rn ma mv mop_success
+            mop_fail_with_wb mop_fail_no_wb ii =
+          let ma = mte_untag_address tagchecked ma in
+          let do_cas_fail_with_wb = cas_fail_with lift true in
+          let do_cas_fail_no_wb = cas_fail_with lift false in
+          M.altT (
+            (* CAS succeeds and generates an Explicit Write Effect *)
+            (* there must be an update to the dirty bit of the TTD *)
+            lift ~tag:"CAS" rn Dir.W true (memtag && tagchecked) mop_success
+              (to_perms "rw" sz) ma mv an ii
+          )( (* CAS fails *)
+            M.altT (
+              (* CAS generates an Explicit Write Effect *)
+              do_cas_fail_with_wb sz an rn ma mv mop_fail_with_wb tagchecked ii
+            )(
+              (* CAS does not generate an Explicit Write Effect *)
+              do_cas_fail_no_wb sz an rn ma mv mop_fail_no_wb tagchecked ii
+            )
+          )
+        let cas_no_writeback lift sz an rn ma mv mop_success
+            mop_fail_with_wb mop_fail_no_wb ii =
+          let tagchecked = rn <> AArch64Base.SP in
+          cas_generic tagchecked lift sz an rn ma mv mop_success
+            mop_fail_with_wb mop_fail_no_wb ii
+
+        let cas_unchecked lift sz an rn ma mv mop_success
+            mop_fail_with_wb mop_fail_no_wb ii =
+          let tagchecked = false in
+          cas_generic tagchecked lift sz an rn ma mv mop_success
+            mop_fail_with_wb mop_fail_no_wb ii
       end
 
 (***********************)
@@ -2388,64 +2576,7 @@ Arguments:
           (rmw_to_read rmw)
           ii
 
-      let do_cas_fail_with lift do_wb sz an rn ma mv mop tagcheck ii =
-        let action checked ma =
-          let do_action updatedb checked ma =
-              (* Dir.W would force check for dbm bit:                  *)
-              (* - if set then either update or not db bit per R_TXGHB *)
-              (* - if unset raise Permission fault                     *)
-              lift ~tag:"FAIL" rn Dir.W updatedb checked mop (to_perms "rw" sz) ma mv an ii
-          in
-          if do_wb then
-            do_action true checked ma
-          else begin
-            (* When there is no writeback, It is IMPLEMENTATION SPECIFIC *)
-            (* if there is an update to the dirty bit of the TTD *)
-            let proc = ii.AArch64.proc in
-            let tthm = dirty.DirtyBit.tthm proc
-            and hd = dirty.DirtyBit.hd proc in
-            let may_update_db = tthm && hd in
-            if may_update_db then
-              M.altT (do_action true checked ma) (do_action false checked ma)
-            else
-              do_action false checked ma
-          end
-        in
-
-        if tagcheck && C.mte_store_only then
-          (* If FEAT_MTE_STORE_ONLY is implemented it is              *)
-          (* CONSTRAINED UNPREDICTABLE whether the Tag Check          *)
-          (* operation is performed.                                  *)
-          M.altT (
-            (* No Tag Check *)
-            (* Extract location without a tag from an address *)
-            let ma = ma >>= fun a -> loc_extract a in
-            action false ma
-          )(
-            (* Tag Check *)
-            action true ma
-          )
-        else
-          action memtag ma
-
-      let do_cas_with lift sz an rn ma mv mop_success mop_fail_with_wb mop_fail_no_wb tagcheck ii =
-        let do_cas_fail_with_wb = do_cas_fail_with lift true in
-        let do_cas_fail_no_wb = do_cas_fail_with lift false in
-        M.altT (
-          (* CAS succeeds and generates an Explicit Write Effect *)
-          (* there must be an update to the dirty bit of the TTD *)
-          lift ~tag:"CAS" rn Dir.W true tagcheck mop_success (to_perms "rw" sz) ma mv an ii
-        )( (* CAS fails *)
-          M.altT (
-            (* CAS generates an Explicit Write Effect              *)
-            do_cas_fail_with_wb sz an rn ma mv mop_fail_with_wb tagcheck ii
-          )(
-            (* CAS does not generate an Explicit Write Effect      *)
-            do_cas_fail_no_wb sz an rn ma mv mop_fail_no_wb tagcheck ii
-          )
-        )
-
-      let do_cas = do_cas_with (fun ~tag -> lift_memop ~tag)
+      let do_cas = St.cas_no_writeback (fun ~tag -> lift_memop ~tag)
 
       let cas sz rmw rs rt rn ii =
         let an = rmw_to_read rmw in
@@ -2488,7 +2619,7 @@ Arguments:
         in
         let ma = read_reg_addr rn ii
         and mv = read_reg_data_sz sz rt ii in
-        do_cas sz an rn ma mv mop_success mop_fail_with_wb mop_fail_no_wb memtag ii
+        do_cas sz an rn ma mv mop_success mop_fail_with_wb mop_fail_no_wb ii
 
       let casp sz rmw rs1 rs2 rt1 rt2 rn ii =
         let an = rmw_to_read rmw in
@@ -2549,7 +2680,7 @@ Arguments:
         in
         let ma = read_reg_addr rn ii
         and mv = read_reg_data_sz sz rt1 ii >>> fun _ -> read_reg_data_sz sz rt2 ii in
-        do_cas sz an rn ma mv mop_success mop_fail_with_wb mop_fail_no_wb memtag ii
+        do_cas sz an rn ma mv mop_success mop_fail_with_wb mop_fail_no_wb ii
 
       (* Temporary morello variation of CAS *)
       let cas_morello sz rmw rs rt rn ii =
@@ -2678,84 +2809,85 @@ Arguments:
           do_write_mem sz_half an anexp ac addr2 v2 ii
         end
 
-      let write_mem_2_ops sz = do_write_mem_2_ops sz Annot.N
-
       (* Neon extension, memory accesses return B.Next, as they cannot fail *)
-      let do_simd_ldr an sz addr rd ii =
+      let do_simd_ldr load rA an sz addr rd ii =
         (* 128-bit Neon LDR/STR and friends are split into two 64-bit
          * single-copy atomic accesses. *)
         let mem_op = begin
           if sz == MachSize.S128 then do_read_mem_2_ops_ret else do_read_mem_ret
         end in
-        mem_op sz an aexp Access.VIR addr ii >>= fun v ->
-        write_reg_neon_sz sz rd v ii
+        load rA sz an
+          (fun ac a ->
+            mem_op sz an aexp ac a ii >>= fun v ->
+            write_reg_neon_sz sz rd v ii)
+          (M.unitT addr) ii
 
-      let simd_ldr = do_simd_ldr  Annot.N
-      let simd_ldar = do_simd_ldr  Annot.Q
+      let simd_ldr load rA sz = do_simd_ldr load rA Annot.N sz
+      let simd_ldar load rA sz = do_simd_ldr load rA Annot.Q sz
 
-      let do_simd_str an sz ma rd ii =
-        ma >>|
-        read_reg_neon Port.Data rd ii >>= fun (addr,v) ->
-        if sz == MachSize.S128 then
-          do_write_mem_2_ops sz an aexp Access.VIR addr v ii >>= B.next2T
-        else
-          demote v >>= fun v ->
-          do_write_mem sz an aexp Access.VIR addr v ii >>= B.next1T
+      let do_simd_str store rA an sz ma rd ii =
+        let mop ac addr v ii =
+          if sz == MachSize.S128 then
+            do_write_mem_2_ops sz an aexp ac addr v ii >>= fun _ -> M.unitT ()
+          else
+            demote v >>= fun v ->
+            do_write_mem sz an aexp ac addr v ii in
+        store rA mop sz an ma
+          (read_reg_neon Port.Data rd ii) ii
 
-      let simd_str = do_simd_str Annot.N
-      let simd_stlr = do_simd_str Annot.L
+      let simd_str store rA sz = do_simd_str store rA Annot.N sz
+      let simd_stlr store rA sz = do_simd_str store rA Annot.L sz
 
-      let simd_str_p sz ma rd rs k ii =
-        ma >>|
-        read_reg_neon Port.Data rd ii >>= fun (addr,v) ->
-        if sz == MachSize.S128 then
-          (* 128-bit Neon LDR/STR and friends are split into two 64-bit
-           * single-copy atomic accesses. *)
-          write_mem_2_ops sz aexp Access.VIR addr v ii >>|
-          post_kr rs addr k ii >>= B.next3T
-        else
-          demote v >>= fun v ->
-          write_mem sz aexp Access.VIR addr v ii >>|
-          post_kr rs addr k ii >>= B.next2T
+      let simd_str_p store rA sz ma rd rs k ii =
+        M.delay_kont "simd_str_postindex" ma
+          (fun addr ma ->
+            let write ac a v ii =
+              let store =
+                if sz == MachSize.S128 then
+                  do_write_mem_2_ops sz Annot.N aexp ac a v ii
+                  >>= fun _ -> M.unitT ()
+                else
+                  demote v >>= fun v -> do_write_mem sz Annot.N aexp ac a v ii in
+              store >>| post_kr rs addr k ii >>= fun _ -> M.unitT () in
+            store rA write sz Annot.N ma
+              (read_reg_neon Port.Data rd ii) ii)
 
-      let simd_ldp tnt var addr1 rd1 rd2 ii =
+      let simd_ldp load rA tnt var addr1 rd1 rd2 ii =
         let an = tnt2annot tnt in
         let open AArch64Base in
         let sz = tr_simd_variant var in
-        do_simd_ldr an sz addr1 rd1 ii >>|
-        begin
-          M.add addr1 (neon_sz_k var) >>= fun addr2 ->
-          do_simd_ldr an sz addr2 rd2 ii
-        end >>= B.next2T
+        let mem_op =
+          if sz == MachSize.S128 then do_read_mem_2_ops_ret else do_read_mem_ret in
+        let read ac addr rd =
+          mem_op sz an aexp ac addr ii >>= fun v ->
+          write_reg_neon_sz sz rd v ii in
+        load rA sz an
+          (fun ac addr ->
+            read ac addr rd1 >>|
+            (M.add addr (neon_sz_k var) >>= fun addr2 -> read ac addr2 rd2)
+            >>= fun _ -> M.unitT ())
+          (M.unitT addr1) ii
 
-      let simd_stp tnt var addr1 rd1 rd2 ii =
+      let simd_stp store rA tnt var addr1 rd1 rd2 ii =
         let an = tnt2annot tnt in
         let open AArch64Base in
         let sz = tr_simd_variant var in
-        if sz == MachSize.S128 then
-          (* 128-bit Neon LDR/STR are not single-copy atomic, but they
-           * are single-copy atomic for each of the two 64-bit quantities
-           * they access. This means that a 2x128-bit LDP/STP with Neon
-           * registers results in 4 single-copy atomic accesses. *)
-          begin
+        let write ac addr v =
+          if sz == MachSize.S128 then
+            do_write_mem_2_ops sz an aexp ac addr v ii >>= fun _ -> M.unitT ()
+          else
+            demote v >>= fun v -> do_write_mem sz an aexp ac addr v ii in
+        let mop ac addr v ii =
+          ignore v;
+          let first =
             read_reg_neon Port.Data rd1 ii >>= fun v1 ->
-            do_write_mem_2_ops sz an aexp Access.VIR addr1 v1 ii
-          end >>|
-          begin
-            M.add addr1 (neon_sz_k var) >>|
-            read_reg_neon Port.Data rd2 ii >>= fun (addr2, v2) ->
-            do_write_mem_2_ops sz an aexp Access.VIR addr2 v2 ii
-          end >>= fun ((a, b), (c, d)) -> B.next4T (((a, b), c), d)
-        else
-          begin
-            read_reg_neon Port.Data rd1 ii >>= fun v1 ->
-            write_mem sz aexp Access.VIR addr1 v1 ii
-          end >>|
-          begin
-            M.add addr1 (neon_sz_k var) >>|
-            read_reg_neon Port.Data rd2 ii >>= fun (addr2, v2) ->
-            write_mem sz aexp Access.VIR addr2 v2 ii
-          end >>= B.next2T
+            write ac addr v1 in
+          let second =
+            M.add addr (neon_sz_k var) >>|
+            read_reg_neon Port.Data rd2 ii >>= fun (addr2,v2) ->
+            write ac addr2 v2 in
+          first >>| second >>= fun _ -> M.unitT () in
+        store rA mop sz an (M.unitT addr1) mzero ii
 
       let m128 k = promote (V.intToV k)
 
@@ -3361,6 +3493,12 @@ Arguments:
         in
         M.choiceT any mtrue mfalse
 
+      let predicate_select_active p r ii mactive minactive =
+        let psize = predicate_psize r in
+        let nelem = scalable_nelem r in
+        read_reg_predicate p ii >>= fun pred ->
+        any_active p pred psize nelem ii mactive minactive
+
       (** check the element [idx] in predicate [pred] and add [mtrue] if active,
           or [mfalse] otherwise.
           add [iico_causality_ctrl] from the predicate read to [mtrue] or
@@ -3447,59 +3585,94 @@ Arguments:
           let ops = List.mapi ops rlist in
           List.fold_right  M.seq_mem_list  ops (M.unitT [])
 
-      let load_gather_predicated_elem_or_zero sz p ma mo rs e k ii =
+      let load_gather_predicated_elem_or_zero rA sz p ma mo rm rs e k ii =
         let r = List.hd rs in
         let psize = predicate_psize r in
         let nelem = scalable_nelem r in
         let esize = scalable_esize r in
+        let offset_esize = scalable_esize rm in
         let>= pred = read_reg_predicate p ii in
-        let>= result =
-          let<>= (base, offsets) =
-            any_active p pred psize nelem ii
-              (ma >>| mo)
-              (M.unitT M.A.V.(zero, zero))
-          in
-          let op idx =
-            let load =
-              let>= lane = scalable_getlane offsets idx esize in
-              let>= lane = demote lane in
-              let>= o = memext_sext e k lane in
-              let>= addr = M.add base o in
-              let>= v = do_read_mem_ret sz Annot.N aexp Access.VIR addr ii in
-              let>= v = promote v in
-              M.op1 (Op.LeftShift (idx * esize)) v
+        let<>= (base, offsets) =
+          any_active p pred psize nelem ii
+            (ma >>| mo)
+            (M.unitT M.A.V.(zero, zero)) in
+        let lane_addr idx =
+          let>= lane = scalable_getlane offsets idx offset_esize in
+          let>= lane = demote lane in
+          let>= o = memext_sext e k lane in
+          M.add base o in
+        let rec precheck idx =
+          if idx >= nelem then M.unitT (B.Next [])
+          else
+            let check =
+              lane_addr idx >>= fun addr ->
+              Ld.precheck_lane rA sz (M.unitT addr) ii >>= function
+              | B.Next _ -> precheck (idx+1)
+              | branch -> M.unitT branch in
+            is_active_element p pred psize idx ii check (precheck (idx+1)) in
+        precheck 0 >>= function
+        | B.Fault _ as branch -> M.unitT branch
+        | B.Next _ ->
+          let>= result =
+            let op idx =
+              let load =
+                let>= addr = lane_addr idx in
+                let>= addr = mte_untag_address false (M.unitT addr) in
+                let>= v = do_read_mem_ret sz Annot.N aexp Access.VIR addr ii in
+                let>= v = promote v in
+                M.op1 (Op.LeftShift (idx * esize)) v
+              in
+              is_active_element p pred psize idx ii load
+                (no_action ii >>! M.A.V.zero)
             in
-            is_active_element p pred psize idx ii load (no_action ii >>! M.A.V.zero)
+            let ops = List.map op (Misc.interval 0 nelem) in
+            para_fold_right (M.op Op.Or) ops mzero
           in
-          let ops = List.map op (Misc.interval 0 nelem) in
-          para_fold_right (M.op Op.Or) ops mzero
-        in
-        write_reg_scalable r result ii
+          write_reg_scalable r result ii >>= fun () -> B.next1T ()
+        | branch -> M.unitT branch
 
-      let store_scatter_predicated_elem_or_merge sz p ma mo rs e k ii =
+      let store_scatter_predicated_elem_or_merge rA sz p ma mo rm rs e k ii =
         let r = List.hd rs in
         let psize = predicate_psize r in
         let nelem = scalable_nelem r in
         let esize = scalable_esize r in
+        let offset_esize = scalable_esize rm in
         let>= pred = read_reg_predicate p ii in
         let<>= ((base, offsets), v) =
           any_active p pred psize nelem ii
             (ma >>| mo >>| read_reg_scalable Port.Data r ii)
             (M.unitT ((M.A.V.zero, M.A.V.zero), M.A.V.zero))
-        in
-        let op idx =
-          let store =
-            let>= lane = scalable_getlane offsets idx esize in
-            let>= lane = demote lane in
-            let>= o = memext_sext e k lane in
-            let>= addr = M.add base o in
-            let>= v = scalable_getlane v idx esize in
-            let>= v = demote v in
-            write_mem sz aexp Access.VIR addr v ii in
-          is_active_element r pred psize idx ii store (M.unitT ())
-        in
-        let ops = List.map op (Misc.interval 0 nelem) in
-        List.fold_right M.seq_mem_list ops (M.unitT [()])
+          in
+        let lane_addr idx =
+          let>= lane = scalable_getlane offsets idx offset_esize in
+          let>= lane = demote lane in
+          let>= o = memext_sext e k lane in
+          M.add base o in
+        let rec precheck idx =
+          if idx >= nelem then M.unitT (B.Next [])
+          else
+            let check =
+              lane_addr idx >>= fun addr ->
+              St.precheck_lane rA sz (M.unitT addr) ii >>= function
+              | B.Next _ -> precheck (idx+1)
+              | branch -> M.unitT branch in
+            is_active_element r pred psize idx ii check (precheck (idx+1)) in
+        precheck 0 >>= function
+        | B.Fault _ as branch -> M.unitT branch
+        | B.Next _ ->
+          let op idx =
+            let store =
+              let>= addr = lane_addr idx in
+              let>= v = scalable_getlane v idx esize in
+              let>= v = demote v in
+              let>= addr = mte_untag_address false (M.unitT addr) in
+              write_mem sz aexp Access.VIR addr v ii in
+            is_active_element r pred psize idx ii store (M.unitT ())
+          in
+          let ops = List.map op (Misc.interval 0 nelem) in
+          List.fold_right M.seq_mem_list ops (M.unitT [()]) >>= fun _ ->
+            B.next1T ()
+        | branch -> M.unitT branch
 
       let load_predicated_slice sz r ri k p ma ii =
         let dst,tile,dir,esize = match r with
@@ -4113,7 +4286,7 @@ Arguments:
           let mv = read_reg_data rA ii in
           let lift_memop ~tag rA dir updatedb checked mop perms ma mv an ii =
             do_lift_memop ~tag rA dir updatedb checked mop perms ma mv an ii Fun.id DISide.Data in
-          do_cas_with lift_memop quad Annot.N r ma mv mop_success mop_fail_with_wb mop_fail_no_wb false ii)
+          St.cas_unchecked lift_memop quad Annot.N r ma mv mop_success mop_fail_with_wb mop_fail_no_wb ii)
 
     let gcsss2 r ii =
       let open AArch64Base in
@@ -4193,11 +4366,6 @@ Arguments:
          of code instructions would be ignored. See issue #287.
        *)
 
-      let (!!!!) (m1:(unit list list * unit) M.t) =
-        m1 >>= M.ignore >>= B.next1T
-      let (!!!) (m1:(unit list * unit) M.t) =
-        m1 >>= M.ignore >>= B.next1T
-      let (!!) (m1:(unit * unit) M.t) = m1 >>= B.next2T
       let (!) (m1:unit M.t) = m1 >>= B.next1T
       let nextSet = B.nextSetT
       (* And now, just forget about >>! *)
@@ -4414,136 +4582,164 @@ Arguments:
         (* Neon loads and stores *)
         | I_LDAP1(rs,i,rA,kr) ->
             check_neon inst;
-            !!!(read_reg_addr rA ii >>= fun addr ->
-            (mem_ss (load_elem_ldar MachSize.S128 i) addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            Ld.structure_postindex rA kr access_size Annot.Q
+              (fun _ac addr ->
+                mem_ss (load_elem_ldar MachSize.S128 i) addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              (read_reg_addr rA ii) ii
         | I_LD1(rs,i,rA,kr)
         | I_LD2(rs,i,rA,kr)
         | I_LD3(rs,i,rA,kr)
         | I_LD4(rs,i,rA,kr) ->
             check_neon inst;
-            !!!(read_reg_addr rA ii >>= fun addr ->
-            (mem_ss (load_elem MachSize.S128 i) addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            Ld.structure_postindex rA kr access_size Annot.N
+              (fun _ac addr ->
+                mem_ss (load_elem MachSize.S128 i) addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              (read_reg_addr rA ii) ii
         | I_LD1R(rs,rA,kr)
         | I_LD2R(rs,rA,kr)
         | I_LD3R(rs,rA,kr)
         | I_LD4R(rs,rA,kr) ->
             check_neon inst;
-            !!!(read_reg_addr rA ii >>= fun addr ->
-            (mem_ss (load_elem_rep MachSize.S128) addr rs ii >>|
-            post_kr rA addr kr ii))
+            let sz = neon_sz (List.hd rs) in
+            let access_size = AArch64.simd_mem_access_size rs in
+            Ld.structure_postindex rA kr access_size Annot.N
+              (fun _ac addr ->
+                mem_ss (load_elem_rep sz) addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              (read_reg_addr rA ii) ii
         | I_LD1M(rs,rA,kr) ->
             check_neon inst;
-            !!(read_reg_addr rA ii >>= fun addr ->
-            (load_m_contigous addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            Ld.structure_postindex rA kr access_size Annot.N
+              (fun _ac addr ->
+                load_m_contigous addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              (read_reg_addr rA ii) ii
         | I_LD2M(rs,rA,kr)
         | I_LD3M(rs,rA,kr)
         | I_LD4M(rs,rA,kr) ->
             check_neon inst;
-            !!(read_reg_addr rA ii >>= fun addr ->
-            (load_m addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            Ld.structure_postindex rA kr access_size Annot.N
+              (fun _ac addr ->
+                load_m addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              (read_reg_addr rA ii) ii
         | I_STL1(rs,i,rA,kr) ->
             check_neon inst;
-            !!!(read_reg_addr rA ii >>= fun addr ->
-            (mem_ss (store_elem_stlr i) addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            St.structure_postindex rA kr
+              (fun _ac addr _ ii ->
+                mem_ss (store_elem_stlr i) addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              access_size Annot.L (read_reg_addr rA ii) mzero ii
         | I_ST1(rs,i,rA,kr)
         | I_ST2(rs,i,rA,kr)
         | I_ST3(rs,i,rA,kr)
         | I_ST4(rs,i,rA,kr) ->
             check_neon inst;
-            !!!(read_reg_addr rA ii >>= fun addr ->
-            (mem_ss (store_elem i) addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            St.structure_postindex rA kr
+              (fun _ac addr _ ii ->
+                mem_ss (store_elem i) addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              access_size Annot.N (read_reg_addr rA ii) mzero ii
         | I_ST1M(rs,rA,kr) ->
             check_neon inst;
-            !!!!(read_reg_addr rA ii >>= fun addr ->
-            (store_m_contigous addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            St.structure_postindex rA kr
+              (fun _ac addr _ ii ->
+                store_m_contigous addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              access_size Annot.N (read_reg_addr rA ii) mzero ii
         | I_ST2M(rs,rA,kr)
         | I_ST3M(rs,rA,kr)
         | I_ST4M(rs,rA,kr) ->
             check_neon inst;
-            !!!!(read_reg_addr rA ii >>= fun addr ->
-            (store_m addr rs ii >>|
-            post_kr rA addr kr ii))
+            let access_size = AArch64.simd_mem_access_size rs in
+            St.structure_postindex rA kr
+              (fun _ac addr _ ii ->
+                store_m addr rs ii >>|
+                post_kr rA addr kr ii >>= fun _ -> M.unitT ())
+              access_size Annot.N (read_reg_addr rA ii) mzero ii
         | I_LDR_SIMD(var,r1,rA,MemExt.Reg(v,kr,sext,s)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             get_ea_reg rA v kr sext s ii >>= fun addr ->
-            simd_ldr access_size addr r1 ii >>= B.next1T
+            simd_ldr Ld.checked rA access_size addr r1 ii
         | I_LDR_SIMD(var,r1,rA,MemExt.Imm (k,Idx)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             get_ea_idx rA k ii >>= fun addr ->
-            simd_ldr access_size addr r1 ii >>= B.next1T
+            simd_ldr Ld.no_writeback rA access_size addr r1 ii
         | I_LDR_SIMD(var,r1,rA,MemExt.Imm (k,PreIdx)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             get_ea_preindexed rA k ii >>= fun addr ->
-            simd_ldr access_size addr r1 ii >>= B.next1T
+            simd_ldr Ld.checked rA access_size addr r1 ii
         | I_LDR_SIMD(var,r1,rA,MemExt.Imm (k,PostIdx)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             read_reg_addr rA ii >>= fun addr ->
-            simd_ldr access_size addr r1 ii >>|
-            post_kr rA addr (K k) ii >>= B.next2T
+            (simd_ldr Ld.checked rA access_size addr r1 ii >>|
+              post_kr rA addr (K k) ii) >>= fun (b,()) -> M.unitT b
         | I_LDUR_SIMD(var,r1,rA,k) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             get_ea rA (K k) S_NOEXT ii >>= fun addr ->
-            simd_ldr access_size addr r1 ii >>= B.next1T
+            simd_ldr Ld.no_writeback rA access_size addr r1 ii
         | I_LDAPUR_SIMD(var,r1,rA,k) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             get_ea rA (K k) S_NOEXT ii >>= fun addr ->
-            simd_ldar access_size addr r1 ii >>= B.next1T
+            simd_ldar Ld.no_writeback rA access_size addr r1 ii
         | I_STR_SIMD(var,r1,rA,MemExt.Reg (v,kr,sext,s)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             let ma = get_ea_reg rA v kr sext s ii in
-            simd_str access_size ma r1 ii
+            simd_str St.checked rA access_size ma r1 ii
         | I_STR_SIMD(var,r1,rA,MemExt.Imm (k,Idx)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             let ma = get_ea_idx rA k ii in
-            simd_str access_size ma r1 ii
+            simd_str St.no_writeback rA access_size ma r1 ii
         | I_STR_SIMD(var,r1,rA,MemExt.Imm (k,PreIdx)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             let ma = get_ea_preindexed rA k ii in
-            simd_str access_size ma r1 ii
+            simd_str St.checked rA access_size ma r1 ii
         | I_STR_SIMD(var,r1,rA,MemExt.Imm (k,PostIdx)) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             let ma = read_reg_addr rA ii in
-            simd_str_p access_size ma r1 rA (K k) ii
+            simd_str_p St.postindex rA access_size ma r1 rA (K k) ii
         | I_STUR_SIMD(var,r1,rA,k) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             let ma = get_ea_idx rA k ii in
-            simd_str access_size ma r1 ii
+            simd_str St.no_writeback rA access_size ma r1 ii
         | I_STLUR_SIMD(var,r1,rA,k) ->
             check_neon inst;
             let access_size = tr_simd_variant var in
             let ma = get_ea_idx rA k ii in
-            simd_stlr access_size ma r1 ii
+            simd_stlr St.no_writeback rA access_size ma r1 ii
         | I_LDP_SIMD(tnt,var,r1,r2,r3,idx) ->
           check_neon inst;
           begin
             match idx with
             | k,Idx ->
                 get_ea_idx r3 k ii >>= fun addr ->
-                  simd_ldp tnt var addr r1 r2 ii
+                  simd_ldp Ld.no_writeback r3 tnt var addr r1 r2 ii
             | k,PreIdx ->
                 get_ea_preindexed r3 k ii >>= fun addr ->
-                  simd_ldp tnt var addr r1 r2 ii
+                  simd_ldp Ld.checked r3 tnt var addr r1 r2 ii
             | k,PostIdx ->
                 read_reg_addr r3 ii >>= fun addr ->
-                  (simd_ldp tnt var addr r1 r2 ii >>|
+                  (simd_ldp Ld.checked r3 tnt var addr r1 r2 ii >>|
                   post_kr r3 addr (K k) ii) >>=
                   fun (b,()) -> M.unitT b
           end
@@ -4553,13 +4749,13 @@ Arguments:
             match idx with
             | k,Idx ->
                 get_ea_idx r3 k ii >>= fun addr ->
-                  simd_stp tnt var addr r1 r2 ii
+                  simd_stp St.no_writeback r3 tnt var addr r1 r2 ii
             | k,PreIdx ->
                 get_ea_preindexed r3 k ii >>= fun addr ->
-                  simd_stp tnt var addr r1 r2 ii
+                  simd_stp St.checked r3 tnt var addr r1 r2 ii
             | k,PostIdx ->
                 read_reg_addr r3 ii >>= fun addr ->
-                  (simd_stp tnt var addr r1 r2 ii >>|
+                  (simd_stp St.checked r3 tnt var addr r1 r2 ii >>|
                     post_kr r3 addr (K k) ii) >>=
                   fun (b,()) -> M.unitT b
           end
@@ -4569,50 +4765,71 @@ Arguments:
         | I_LD3SP(var,rs,p,rA,MemExt.Imm (k,Idx))
         | I_LD4SP(var,rs,p,rA,MemExt.Imm (k,Idx)) ->
           check_sve inst;
-          !!!(let sz = tr_simd_variant var in
-              let ma = get_ea_idx rA k ii in
-              load_predicated_elem_or_zero_m sz p ma rs ii >>|
-              M.unitT ())
+          let sz = tr_simd_variant var in
+          let addr = get_ea_idx rA k ii in
+          let access load =
+            load sz Annot.N
+              (fun _ac addr ->
+                load_predicated_elem_or_zero_m sz p (M.unitT addr) rs ii >>|
+                M.unitT ()) addr ii in
+          Ld.predicated_no_writeback
+            (predicate_select_active p (List.hd rs) ii) rA access
         | I_LD1SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s))
         | I_LD2SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s))
         | I_LD3SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s))
         | I_LD4SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s)) ->
           check_sve inst;
-          !!!(let sz = tr_simd_variant var in
-              let ma = get_ea_reg rA V64 rM MemExt.LSL s ii in
-              load_predicated_elem_or_zero_m sz p ma rs ii >>|
-              M.unitT ())
+          let sz = tr_simd_variant var in
+          let addr = get_ea_reg rA V64 rM MemExt.LSL s ii in
+          let access load =
+            load sz Annot.N
+              (fun _ac addr ->
+                load_predicated_elem_or_zero_m sz p (M.unitT addr) rs ii >>|
+                M.unitT ()) addr ii in
+          Ld.predicated_register_offset
+            (predicate_select_active p (List.hd rs) ii) rA access
         | I_LD1SP (var,rs,p,rA,MemExt.ZReg (rM,sext,s)) ->
           check_sve inst;
-          !(let sz = tr_simd_variant var in
-            let ma = read_reg_addr rA ii in
-            let mo = read_reg_scalable Port.Addr rM ii in
-            load_gather_predicated_elem_or_zero sz p ma mo rs sext s ii)
+          let sz = tr_simd_variant var in
+          let ma = read_reg_addr rA ii in
+          let mo = read_reg_scalable Port.Addr rM ii in
+          load_gather_predicated_elem_or_zero rA sz p ma mo rM rs sext s ii
         | I_ST1SP(var,rs,p,rA,MemExt.Imm (k,Idx))
         | I_ST2SP(var,rs,p,rA,MemExt.Imm (k,Idx))
         | I_ST3SP(var,rs,p,rA,MemExt.Imm (k,Idx))
         | I_ST4SP(var,rs,p,rA,MemExt.Imm (k,Idx)) ->
           check_sve inst;
-          !!!!(let sz = tr_simd_variant var in
-              let ma = get_ea_idx rA k ii in
-               store_predicated_elem_or_merge_m sz p ma rs ii >>|
-               M.unitT ())
+          let sz = tr_simd_variant var in
+          let addr = get_ea_idx rA k ii in
+          let access store =
+            store
+              (fun _ac addr _ ii ->
+                store_predicated_elem_or_merge_m sz p (M.unitT addr) rs ii >>|
+                M.unitT ())
+              sz Annot.N addr mzero ii in
+          St.predicated_no_writeback
+            (predicate_select_active p (List.hd rs) ii) rA access
         | I_ST1SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s))
         | I_ST2SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s))
         | I_ST3SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s))
         | I_ST4SP(var,rs,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s)) ->
           check_sve inst;
-          !!!!(let sz = tr_simd_variant var in
-              let ma = get_ea_reg rA V64 rM MemExt.LSL s ii in
-               store_predicated_elem_or_merge_m sz p ma rs ii >>|
-               M.unitT ())
+          let sz = tr_simd_variant var in
+          let addr = get_ea_reg rA V64 rM MemExt.LSL s ii in
+          let access store =
+            store
+              (fun _ac addr _ ii ->
+                store_predicated_elem_or_merge_m sz p (M.unitT addr) rs ii >>|
+                M.unitT ())
+              sz Annot.N addr mzero ii in
+          St.predicated_register_offset
+            (predicate_select_active p (List.hd rs) ii) rA access
         | I_ST1SP (var,rs,p,rA,MemExt.ZReg (rM,sext,s)) ->
           check_sve inst;
-          !!!(let sz = tr_simd_variant var in
-              let ma = read_reg_addr rA ii in
-              let mo = read_reg_scalable Port.Addr rM ii in
-              store_scatter_predicated_elem_or_merge sz p ma mo rs sext s ii >>|
-              M.unitT ())
+          let sz = tr_simd_variant var in
+          let ma = read_reg_addr rA ii in
+          let mo = read_reg_scalable Port.Addr rM ii in
+          store_scatter_predicated_elem_or_merge rA sz p ma mo rM rs sext s ii
         | I_PTRUE(p,pattern) ->
           check_sve inst;
           ptrue p pattern ii
@@ -4808,24 +5025,50 @@ Arguments:
            adda dir za pslice pelem z ii >>= nextSet za
         | I_LD1SPT (var,za,ri,k,p,rA,MemExt.Imm(0,Idx)) ->
            check_sme inst;
-           !(let sz = tr_simd_variant var in
-             let ma = read_reg_addr rA ii in
-             load_predicated_slice sz za ri k p ma ii)
+           let sz = tr_simd_variant var in
+           let addr = read_reg_addr rA ii in
+           let access load =
+             load sz Annot.N
+               (fun _ac addr ->
+                 load_predicated_slice sz za ri k p (M.unitT addr) ii >>|
+                 M.unitT ()) addr ii in
+           Ld.predicated_no_writeback
+             (predicate_select_active p za ii) rA access
         | I_LD1SPT(var,za,ri,k,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s)) ->
-          !(let sz = tr_simd_variant var in
-            let ma = get_ea_reg rA V64 rM MemExt.LSL s ii in
-            load_predicated_slice sz za ri k p ma ii)
+          check_sme inst;
+          let sz = tr_simd_variant var in
+          let addr = get_ea_reg rA V64 rM MemExt.LSL s ii in
+          let access load =
+            load sz Annot.N
+              (fun _ac addr ->
+                load_predicated_slice sz za ri k p (M.unitT addr) ii >>|
+                M.unitT ()) addr ii in
+          Ld.predicated_register_offset
+            (predicate_select_active p za ii) rA access
         | I_ST1SPT (var,za,ri,k,p,rA,MemExt.Imm(0,Idx)) ->
            check_sme inst;
-           !!!(let sz = tr_simd_variant var in
-               let ma = read_reg_addr rA ii in
-               store_predicated_slice sz za ri k p ma ii >>|
-               M.unitT ())
+           let sz = tr_simd_variant var in
+           let addr = read_reg_addr rA ii in
+           let access store =
+             store
+               (fun _ac addr _ ii ->
+                 store_predicated_slice sz za ri k p (M.unitT addr) ii >>|
+                 M.unitT ())
+               sz Annot.N addr mzero ii in
+           St.predicated_no_writeback
+             (predicate_select_active p za ii) rA access
         | I_ST1SPT (var,za,ri,k,p,rA,MemExt.Reg (V64,rM,MemExt.LSL,s)) ->
-          !!!(let sz = tr_simd_variant var in
-              let ma = get_ea_reg rA V64 rM MemExt.LSL s ii in
-              store_predicated_slice sz za ri k p ma ii >>|
-              M.unitT ())
+          check_sme inst;
+          let sz = tr_simd_variant var in
+          let addr = get_ea_reg rA V64 rM MemExt.LSL s ii in
+          let access store =
+            store
+              (fun _ac addr _ ii ->
+                store_predicated_slice sz za ri k p (M.unitT addr) ii >>|
+                M.unitT ())
+              sz Annot.N addr mzero ii in
+          St.predicated_register_offset
+            (predicate_select_active p za ii) rA access
         (* Morello instructions *)
         | I_ALIGND(rd,rn,k) ->
             check_morello inst ;
