@@ -1875,7 +1875,7 @@ Arguments:
         m_sext v >>= m_shift
 
 
-(* Complete effective adress computation *)
+(* Complete effective address computation *)
       let get_ea rs kr s ii =
         let open AArch64Base in
         match kr, s with
@@ -3515,53 +3515,44 @@ Arguments:
 
       type double = Once|Twice
 
-      let stg d rt rn k ii =
-        let ma = get_ea rn (AArch64.K k) AArch64.S_NOEXT ii
-        and mv = read_reg_data rt ii >>= tag_extract in
-        let do_stg ac ma mv =
-          let __do_stg a v =
-            M.op1 Op.TagLoc a >>= fun a -> do_write_tag a v ii in
-          let _do_stg =
-            match d with
-            | Once ->
-               fun a v -> __do_stg a v
-            | Twice ->
-               fun a v ->
-                 begin
-                   __do_stg a v >>|
-                     (M.op1 (Op.AddK MachSize.granule_nbytes) a
-                      >>= fun a ->  __do_stg a v)
-                 end >>! () in
+      (* Applies a function 'store' over the granules once or twice *)
+      let store_granules d store a v = match d with
+        | Once -> store a v
+        | Twice ->
+            (store a v >>|
+              (M.op1 (Op.AddK MachSize.granule_nbytes) a >>=
+              fun a -> store a v)) >>! ()
+
+      (* Generic tag store operation *)
+      let do_store_tag d rn store ma mv ii =
+        let mop ac ma mv =
+          let store a v = store_granules d (store ac) a v in
           if Access.is_physical ac then
-            M.bind_ctrldata_data ma mv _do_stg
+            (* additional ctrl dep on address *)
+            M.bind_ctrldata_data ma mv store
           else
-            (ma >>| mv) >>= fun (a,v) -> _do_stg a v in
-        lift_memop rn Dir.W true false (fun ac ma mv -> do_stg ac ma mv)
-          (to_perms "w" MachSize.granule) ma mv Annot.N ii
+            (ma >>| mv) >>= fun (a,v) -> store a v
+        in
+        lift_memop rn Dir.W true false (* Unchecked *)
+          mop (to_perms "w" MachSize.granule) ma mv Annot.N ii
+
+      let do_stg d rt rn ii ma =
+        let mv = read_reg_data rt ii >>= tag_extract in
+        let do_stg _ac a v =  M.op1 Op.TagLoc a >>= fun tag_addr -> do_write_tag tag_addr v ii in
+        do_store_tag d rn do_stg ma mv ii
+
+      let do_stz d rn ii ma =
+        let sz = MachSize.granule in
+        let do_stz ac a v = do_write_mem sz Annot.N aexp ac a v ii in
+        do_store_tag d rn do_stz (ma >>= loc_extract) mzero ii
+
+      let stg d rt rn k ii =
+        let ma = get_ea rn (AArch64.K k) AArch64.S_NOEXT ii in
+        do_stg d rt rn ii ma
 
       let stz d rn k ii =
-        let sz = MachSize.granule in
-        let mop =
-          match d with
-          | Once ->
-             do_write_mem sz Annot.N aexp
-          | Twice ->
-             fun ac a v ii ->
-               let mop1 = do_write_mem sz Annot.N aexp  ac a v ii
-               and mop2 =
-                 M.op1 (Op.AddK MachSize.granule_nbytes) a
-                 >>= fun a -> do_write_mem sz Annot.N aexp  ac a v ii in
-               (mop1 >>| mop2) >>! () in
-        let ma = get_ea rn (AArch64.K k) AArch64.S_NOEXT ii >>= loc_extract in
-        lift_memop rn Dir.W true false (* Unchecked *)
-          (fun ac ma mv ->
-            if Access.is_physical ac then begin
-                (* additional ctrl dep on address *)
-                M.bind_ctrldata_data ma mv
-                  (fun a v -> mop ac a v ii)
-              end else
-              (ma >>| mv) >>= fun (a,v) -> mop ac a v ii)
-          (to_perms "w" sz) ma mzero Annot.N ii
+        let ma = get_ea rn (AArch64.K k) AArch64.S_NOEXT ii in
+        do_stz d rn ii ma
 
       let do_stzg d rt rn k ii =
         let do_stz = stz d rn k ii in
